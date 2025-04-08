@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to SoulFont</title>
+  
+  <style>
+    /* 전체 레이아웃 */
+    html, body {
+      position: relative;
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+      background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%, #333), color-stop(100%, black));
+      background: -webkit-radial-gradient(center, ellipse cover, #333 0%, black 100%);
+      height: 100%;
+      width: 100%;
+      text-align: center;
+      font-family: "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #fff;
+    }
+    
+    h1 {
+      margin-top: 20px;
+      font-weight: 400;
+      text-align: center;
+      z-index: 100;
+      position: relative;
+    }
+    
+    /* CoverFlow 영역 */
+    #coverflow {
+      height: 70%;
+      width: 100%;
+      -webkit-perspective: 600px;
+              perspective: 600px;
+      position: relative;
+      margin: auto;
+    }
+    
+    #coverflow section {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      margin-left: -90px;
+      margin-top: -90px;
+      background-color: white;
+      background-size: 100%;
+      -webkit-transform-style: preserve-3d;
+         -moz-transform-style: preserve-3d;
+          -ms-transform-style: preserve-3d;
+              transform-style: preserve-3d;
+      -webkit-transition: all 300ms ease-in;
+         -moz-transition: all 300ms ease-in;
+          -ms-transition: all 300ms ease-in;
+           -o-transition: all 300ms ease-in;
+              transition: all 300ms ease-in;
+      -webkit-box-reflect: below 0
+          -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(0.3, transparent), to(white));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-size: 14px;
+      padding: 10px;
+      box-sizing: border-box;
+      /* border-radius: 8px; */
+    }
+    
+    /* 내비게이션 컨트롤 */
+    #controls {
+      position: absolute;
+      width: 100%;
+      bottom: 10%;
+      z-index: 1;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+         -khtml-user-select: none;
+          -moz-user-select: none;
+           -ms-user-select: none;
+            -o-user-select: none;
+                user-select: none;
+      color: #999;
+      font-size: 18px;
+    }
+    
+    #controls a {
+      color: white; 
+      cursor: pointer;
+      margin: 0 20px;
+      text-decoration: none;
+    }
+    
+    #controls a:hover {
+      color: #66FFFF;
+    }
+    
+    /* 폰트 생성 버튼 */
+    .create-button {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: #ffa4b3;
+      color: #fff;
+      border: none;
+      /* border-radius: 9pt; */
+      cursor: pointer;
+      transition: background-color 0.3s;
+      z-index: 100;
+    }
+    
+    .create-button:hover {
+      background-color: #ce9cb9;
+    }
+  </style>
+  
+  <!-- Modernizr (필수 JS 라이브러리) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+</head>
+<body>
+  <h1>Welcome to SoulFont</h1>
+  
+  <!-- CoverFlow 영역 (Jinja 템플릿을 이용해 폰트 데이터를 반복 출력) -->
+  <div id="coverflow">
+    {% for font in fonts %}
+      <section>
+        <div>
+          <p>{{ font.text }}</p>
+          <p>{{ font.font_description }}</p>
+        </div>
+      </section>
+    {% empty %}
+      <section>
+        <div>No fonts available.</div>
+      </section>
+    {% endfor %}
+  </div>
+  
+  <!-- 좌우 내비게이션 컨트롤 -->
+  <nav id="controls">
+    <a id="prev">Left</a> &amp; <a id="next">Right</a>
+  </nav>
+  
+  <!-- 폰트 생성 버튼 -->
+  <button class="create-button" onclick="window.location.href='/create/'">
+    Create My Own Font!
+  </button>
+  
+  <!-- 배경음악 -->
+  <audio id="bg-music" src="bg-music.mp3" autoplay loop>
+    Your browser does not support the audio element.
+  </audio>
+  
+  <!-- CoverFlow 효과 구현 스크립트 -->
+  <script>
+    (function() {
+      var _index = 0,
+          _coverflow = null,
+          _prevLink = null,
+          _nextLink = null,
+          _albums = [],
+          _transformName = Modernizr.prefixed('transform'),
+          OFFSET = 70,    // 좌우 이동 거리(%)
+          ROTATION = 45,  // 회전 각도 (deg)
+          BASE_ZINDEX = 10,
+          MAX_ZINDEX = 42;
+    
+      function get(selector) {
+          return document.querySelector(selector);
+      }
+    
+      function render() {
+          for (var i = 0; i < _albums.length; i++) {
+              if (i < _index) {
+                  _albums[i].style[_transformName] = "translateX(-" + (OFFSET * (_index - i)) + "%) rotateY(" + ROTATION + "deg)";
+                  _albums[i].style.zIndex = BASE_ZINDEX + i;
+              }
+              if (i === _index) {
+                  _albums[i].style[_transformName] = "rotateY(0deg) translateZ(140px)";
+                  _albums[i].style.zIndex = MAX_ZINDEX;
+              }
+              if (i > _index) {
+                  _albums[i].style[_transformName] = "translateX(" + (OFFSET * (i - _index)) + "%) rotateY(-" + ROTATION + "deg)";
+                  _albums[i].style.zIndex = BASE_ZINDEX + (_albums.length - i);
+              }
+          }
+      }
+    
+      function flowRight() {
+          if (_index > 0) {
+              _index--;
+              render();
+          }
+      }
+    
+      function flowLeft() {
+          if (_albums.length > (_index + 1)) {
+              _index++;
+              render();
+          }
+      }
+    
+      function keyDown(event) {
+          switch(event.keyCode) {
+              case 37: flowRight(); break; // 왼쪽 화살표
+              case 39: flowLeft(); break;  // 오른쪽 화살표
+          }
+      }
+    
+      function registerEvents() {
+          _prevLink.addEventListener('click', flowRight, false);
+          _nextLink.addEventListener('click', flowLeft, false);
+          document.addEventListener('keydown', keyDown, false);
+      }
+    
+      function init() {
+          _albums = Array.prototype.slice.call(document.querySelectorAll('#coverflow section'));
+          _index = Math.floor(_albums.length / 2);
+          _coverflow = get('#coverflow');
+          _prevLink = get('#prev');
+          _nextLink = get('#next');
+    
+          // 각 섹션에 data-cover 속성 값으로 배경 이미지 설정
+          for (var i = 0; i < _albums.length; i++) {
+              var url = _albums[i].getAttribute("data-cover");
+              if(url) {
+                _albums[i].style.backgroundImage = "url(" + url + ")";
+              }
+          }
+    
+          registerEvents();
+          render();
+      }
+    
+      init();
+    }());
+  </script>
+</body>
+</html>

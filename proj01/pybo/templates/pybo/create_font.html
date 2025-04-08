@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Font</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin-top: 100px;
+        }
+        .box {
+            width: 300px;
+            height: 300px;
+            border: 2px solid black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .file-list {
+            margin-top: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Create Your Own Font</h1>
+    
+    <div class="container">
+        <div class="box">
+            <p>Download Template</p>
+            <div class="file-list">
+                <a href="{% url 'download_template1' %}?file=1-uniform.png">
+                    <button class="button">Template 1</button>
+                </a>
+                <a href="{% url 'download_template2' %}?file=2-uniform.png">
+                    <button class="button">Template 2</button>
+                </a>
+                <a href="{% url 'download_template3' %}?file=3-uniform.png">
+                    <button class="button">Template 3</button>
+                </a>
+            </div>
+        </div>
+
+        <div class="box">
+            <p>Upload Your Template</p>
+            <form action="{% url 'learning' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="file-list">
+                    <p>Template 1: <input type="file" name="template1" required></p>
+                    <p>Template 2: <input type="file" name="template2" required></p>
+                    <p>Template 3: <input type="file" name="template3" required></p>
+                </div>
+                <button type="submit" class="button">Create Font</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

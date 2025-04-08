@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Font</title>
+    <!-- pybo/templates/pybo/result.html -->
+    <h1>TTF 생성 결과</h1>
+    {% if ttf_path %}
+    <a href="{{ ttf_path }}" download>TTF 다운로드</a>
+    {% else %}
+    <p>TTF 파일 경로가 없습니다.</p>
+    {% endif %}
+    
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin-top: 100px;
+        }
+        .box {
+            width: 300px;
+            height: 300px;
+            border: 2px solid black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Create & Download Your Font</h1>
+
+    <form method="POST" enctype="multipart/form-data" style="text-align: center; margin-bottom: 50px;">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="button">Submit</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'index' %}">
+            <button class="button">Back to Home</button>
+        </a>
+    </div>
+
+    <!-- result.html에 추가 -->
+    <div class="download-section">
+        <h2>Your Generated Font</h2>
+        <p>Your custom font has been successfully created!</p>
+        <a href="{% url 'download_font' %}" class="button">Download Your Font</a>
+    </div>
+    
+    <!-- 기존 폰트 목록이 있다면 -->
+    <div class="font-list">
+        <h2>Your Previous Fonts</h2>
+        {% for font in fonts %}
+        <div class="font-item">
+            <h3>{{ font.name }}</h3>
+            <p>Created: {{ font.created_at }}</p>
+            <a href="{% url 'download_font_by_id' font.id %}" class="button">Download</a>
+        </div>
+        {% empty %}
+        <p>No previous fonts available.</p>
+        {% endfor %}
+    </div>
+    
+</body>
+</html>

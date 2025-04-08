@@ -1,0 +1,23 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning...</title>
+</head>
+<body>
+    <h1 style="text-align: center;">Learning Your Writing...</h1>
+
+    <script>
+        setTimeout(function() {
+            window.location.href = "/result/";
+        }, 5000);  // 5초 후 자동 이동
+    </script>
+</body>
+</html> -->
+
+<!-- pybo/templates/pybo/learning.html -->
+<form method="post" action="{% url 'learning' %}">
+  {% csrf_token %}
+  <button type="submit">모델 실행 및 폰트 생성</button>
+</form>
