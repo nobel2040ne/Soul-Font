@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning...</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 50%, #ffdde1 100%);
+      backdrop-filter: blur(10px);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #ffffff;
+    }
+
+    .spinner {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+    }
+
+    .spinner svg {
+      animation: rotate 2s linear infinite;
+    }
+
+    .spinner circle {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      animation: dash 2s ease-in-out infinite, color-change 2s ease-in-out infinite;
+    }
+
+    @keyframes rotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes dash {
+      0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+      }
+      50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+      }
+      100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+      }
+    }
+
+    @keyframes color-change {
+      0% {
+        stroke: #ff4d4d;  /* 빨강 */
+      }
+      25% {
+        stroke: #ffb3b3;  /* 노랑 */
+      }
+      50% {
+        stroke: #ffcc00;  /* 파랑 */
+      }
+      75% {
+        stroke: #32cd32;  /* 초록 */
+      }
+      100% {
+        stroke: #4f46e5;  /* 빨강 */
+      }
+    }
+
+    #timer {
+      font-size: 24px;
+      margin-top: 10px;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="spinner">
+    <svg viewBox="0 0 50 50">
+      <circle cx="25" cy="25" r="20"></circle>
+    </svg>
+  </div>
+
+  <h1>Learning Your Writing...</h1>
+  <p id="timer">Estimated time: 20:00</p>
+
+  <script>
+    let totalSeconds = 20 * 60;  // 20분
+
+    function updateTimer() {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      document.getElementById('timer').innerText = 
+        `Estimated time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+      totalSeconds--;
+
+      if (totalSeconds < 0) {
+        clearInterval(timerInterval);
+        window.location.href = "/result/";
+      }
+    }
+
+    const timerInterval = setInterval(updateTimer, 1000);
+  </script>
+
+</body>
+</html>

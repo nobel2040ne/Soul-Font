@@ -1,0 +1,55 @@
+CONNECT
+> ssh admin@10.171.24.201 -p20003
+> ssh root@10.171.24.201 -p20003
+> SASA_0003
+
+VSCode + Remote-SSH
+>sudo service ssh restart
+> ps -p 1
+> sudo /ect/init.d/ssh restart
+
+> install Remote - SSH
+> settings.json OR ~/.ssh/config 에 서버 정보 추가
+> VSCode에서 Remote-SSH로 접속 선택
+
+SERVER
+http://10.171.24.201:20003
+
+SFTP
+PS C:\Users\nobel > sftp -P 20003 admin@10.171.24.201
+PS C:\Users\nobel > mkdir /home/admin/start-django
+PS C:\Users\nobel > put -r start-Django
+
+PYTHON 3.7.9
+> sudo apt update
+> sudo apt install -y build-essential libssl-dev zlib1g-dev \
+libncurses5-dev libreadline-dev libsqlite3-dev libffi-dev \
+libbz2-dev wget libgdbm-dev libnss3-dev liblzma-dev
+
+> cd ~
+> wget https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tgz
+> tar -xvf Python-3.7.9.tgz
+> cd Python-3.7.9
+
+> ./configure --enable-optimizations
+> make -j$(nproc) 
+> sudo make altinstall
+
+> python3.7 --version
+
+> python3.7 -m venv venvproj01
+> source venvproj01/bin/activate
+
+> pip install --upgrade pip
+> pip install -r requirements.txt
+
+TMUX
+> tmux ls
+> tmux attach -t session0
+> tmux kill-session -t session0
+> tmux kill-server
+> tmux new -s mysession
+
+GUI
+> sudo apt-get install mc
+> mc

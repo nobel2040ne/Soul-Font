@@ -1,0 +1,83 @@
+<!-- admin_page.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>관리자 페이지 – Soul Font</title>
+  <style>
+    * { box-sizing: border-box; margin:0; padding:0; }
+
+    body {
+      font-family: 'Noto Sans KR','Roboto',sans-serif;
+      background: linear-gradient(135deg, #ffe6f0 0%, #fff0f6 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,230,240,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 0;
+    }
+
+    .admin-card {
+      position: relative;
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      z-index: 1;
+      text-align: center;
+    }
+
+    .blossom-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .admin-card h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .admin-card p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 24px;
+    }
+
+    .admin-card a.logout-btn {
+      display: inline-block;
+      padding: 10px 24px;
+      background: #ff9ff3;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 20px;
+      font-weight: 600;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+    .admin-card a.logout-btn:hover {
+      background: #f78fb3;
+      box-shadow: 0 4px 12px rgba(247,143,179,0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-backdrop"></div>
+  <div class="admin-card">
+    <div class="blossom-icon">🌸</div>
+    <h1>관리자 페이지</h1>
+    <p>여기서 서비스 설정, 사용자 관리 등을 할 수 있습니다.</p>
+    <a href="{% url 'logout' %}" class="logout-btn">로그아웃</a>
+  </div>
+</body>
+</html>

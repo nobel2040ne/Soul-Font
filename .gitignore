@@ -1,0 +1,32 @@
+# Python
+*.pyc
+*.pyo
+__pycache__
+
+# Django
+*.log
+*.pot
+*.pyc
+*.png
+*.svg
+*.exe
+*.index
+*.meta
+*.data
+**/checkpoint/
+*.tfevents.*
+proj01/experiment/*
+*.JINGRAM
+*.whl
+
+# Environment variables
+*.env
+
+# Virtual Environment
+venv/
+env/
+
+# VSCode settings
+.vscode/
+
+node_modules/
