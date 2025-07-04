@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>비밀번호 재설정</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #ffe6f0 0%, #fff0f6 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 230, 240, 0.6);
+      backdrop-filter: blur(4px);
+    }
+
+    .login-card {
+      position: relative;
+      background: #fff;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 380px;
+      padding: 40px 32px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      z-index: 1;
+    }
+
+    .blossom-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .login-card h2 {
+      font-size: 22px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .login-card .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .login-card .back-button {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 10px 20px;
+      background-color: #ff9ff3;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+    .login-card .back-button:hover {
+      background-color: #f78fb3;
+      box-shadow: 0 4px 12px rgba(247, 143, 179, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-backdrop"></div>
+  <div class="login-card">
+    <div class="blossom-icon">🌸</div>
+    <h2>아쉽습니다!</h2>
+    <div class="subtitle">비밀번호 재설정은 현재 지원되지 않습니다.</div>
+    <a href="{% url 'login' %}" class="back-button">로그인 페이지로 돌아가기</a>
+  </div>
+</body>
+</html>

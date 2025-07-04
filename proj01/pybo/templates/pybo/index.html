@@ -1,0 +1,663 @@
+  <!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to SoulFont</title>
+  <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
+  {% load static %}
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 50%, #ffdde1 100%);
+      backdrop-filter: blur(10px);
+      overflow-x: hidden;
+      transition: background-color .4s ease, color .4s ease, opacity .7s ease-in-out;
+          font-family: "SUIT", "Segoe UI", -apple-system, BlinkMacSystemFont,
+                 "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    h1 {
+      margin: 40px 0 20px;
+      font-size: 2.5rem;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    #coverflow {
+      height: 100%; width: 100%;
+      display: flex;
+      perspective: 600px;
+      position: relative;
+      margin: auto;
+      padding-top: 0px;
+    }
+
+    #coverflow-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-top: 10px;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    #coverflow section {
+      position: absolute;
+      top: 10%;
+      left: 52%;
+      width: 275px;
+      height: 275px;
+      margin-left: -160px;
+      margin-top: -160px;
+    
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      
+      border-radius: 24px;
+    
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    
+      box-shadow: 
+        0 8px 32px 0 rgba(0, 0, 0, 0.1),
+        inset 0 0 8px rgba(255, 255, 255, 0.25);
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    
+      color: rgba(255, 255, 255, 0.85); /* 반투명 흰 글자 – dark 배경 대응 */
+      font-weight: 500;
+      letter-spacing: 0.25px;
+    
+      padding: 20px;
+      box-sizing: border-box;
+      overflow: visible;
+    
+      will-change: transform, filter;
+      transition:
+        transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
+        filter 0.45s ease,
+        background 0.3s ease;
+    }
+
+    .action-btn {
+      padding: 14px 36px;
+      margin: 12px;
+    
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    
+      color:rgba(255, 255, 255, 0.85);
+
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 18px;
+    
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    
+      box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.1),
+        inset 0 0 8px rgba(255, 255, 255, 0.25);
+    
+      cursor: pointer;
+      transform: perspective(600px);
+      transition:
+        transform 0.2s ease,
+        background 0.35s ease,
+        box-shadow 0.35s ease,
+        border 0.35s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.035) translateY(-1px);
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .action-btn:active {
+      transform: scale(0.98) translateY(1px);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .action-btn.primary{
+      background:linear-gradient(135deg,#ff8bb3 0%, #ffa1c5 50%, #ffb9d6 100%);
+      border:none;
+    }
+
+    .action-btn.primary:hover{
+      background:linear-gradient(135deg,#ffa1c5 0%, #ff8bb3 100%);
+    }
+
+    @media (max-width:768px){
+      #actions{ display:flex; flex-direction:column; align-items:center; }
+      .action-btn{ width:84%; }
+    }
+    
+    @media (max-width: 768px) {
+      #coverflow {
+        height: auto;
+        flex-wrap: wrap;
+      }
+    }
+
+    body.dark-mode {
+      background: #0d0d0d;
+      color: #eaeaea;
+    }
+
+    body.dark-mode #coverflow section{
+      border:1px solid transparent;
+      border-image:linear-gradient(135deg,
+                  #ffb0c8 0%, #ffcee1 50%, #ffb0c8 100%) 1;
+      border-radius: 0px;
+      backdrop-filter:blur(12px) saturate(150%);
+    }
+
+    .cover-arrow{
+      position:absolute; top:50%; 
+      transform:translateY(-75%);
+      padding:0 12px;
+      background:none;
+      border:none;
+      font-size:3rem; 
+      color:#fff; cursor:pointer; user-select:none; z-index:120;
+      transition:transform .25s ease;
+    }
+
+    .cover-arrow:hover  { transform:translateY(-75%) scale(1.08); }
+    .cover-arrow:active { transform:translateY(-75%) scale(.92); }
+
+    #arrow-left  { left:10px; }
+    #arrow-right { right:10px; }
+    .arrow-icon{
+      display:inline-block;
+      transform:scaleY(7);
+      line-height:0;
+    }
+
+    #topbar{
+      position:fixed; top:35px; right:20px;
+      display:flex; align-items:center; gap:20px;
+      z-index:250;
+    }
+
+    .topnav-link{
+      padding:4px 10px;
+      font:600 0.9rem/1 "SUIT", sans-serif;
+      color:#fff; text-decoration:none;
+      background:rgba(255,255,255,0.15);
+      border:1.5px solid rgba(255,255,255,0.4);
+      border-radius:10px; 
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 
+        0 8px 32px 0 rgba(0, 0, 0, 0.1),
+        inset 0 0 8px rgba(255, 255, 255, 0.25);
+      transition:background .25s ease, transform .2s ease;
+    }
+
+    .topnav-link:hover{ background:rgba(255,255,255,.32); transform:translateY(-1px); }
+    .topnav-link:active{ transform:translateY(0) scale(.96); }
+
+    body.dark-mode .topnav-link{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.28); }
+    body.dark-mode .topnav-link:hover{ background:rgba(255,255,255,.24); }
+
+    .theme-toggle{ 
+      display: inline-block;
+      cursor: pointer;
+      padding: 10px;
+    }
+
+    .theme-toggle input{ 
+      display: none;
+    }    
+
+    .toggle-track{
+      display: inline-block;
+      position:relative; width:72px; height:38px;
+      background:rgba(255,255,255,0.15); backdrop-filter:blur(12px);
+      border:1px solid rgba(255,255,255,0.4); border-radius:34px;
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 
+        0 8px 32px 0 rgba(0, 0, 0, 0.1)
+        inset 0 0 8px rgba(255, 255, 255, 0.25);
+      cursor:pointer; overflow:hidden;
+      transition:background .4s ease;
+    }
+
+    .icon{
+      position:absolute; top:50%; transform:translateY(-50%);
+      font-size:18px; line-height:0; transition:transform .6s ease, opacity .4s ease;
+      pointer-events:none;
+    }
+
+    .sun { left:8px;  color:#ffdd55; }
+
+    .moon{ right:8px; color:#e0e0ff; transform:translateY(-50%) rotate(-180deg); opacity:0; }
+
+    input:checked + .toggle-track      { background:rgba(0,0,0,.5);  }
+    input:checked + .toggle-track .sun{ transform:translateY(-50%) rotate(180deg); opacity:0; }
+    input:checked + .toggle-track .moon{ transform:translateY(-50%) rotate(0);    opacity:1; }
+
+    body.dark-mode{
+      background:#121212 !important;  /* !important 로 덮어쓰기 */
+      color:#eaeaea !important;
+    }
+
+    body.dark-mode #coverflow section{
+      background:rgba(0,0,0,.55) !important;
+      color:inherit;
+    }
+
+    body.dark-mode .action-btn{
+      background:rgba(255,255,255,.15) !important;
+      border-color:rgba(255,255,255,.3) !important;
+    }
+    
+    body.dark-mode .action-btn.primary{
+      background:linear-gradient(135deg,#73386a 0%,#4c2e50 100%) !important;
+    }
+
+    body::before{
+      content: ''; position: fixed; inset:0; z-index:-1;
+      background:radial-gradient(circle at center,
+             rgba(255,255,255,.28) 0%, transparent 60%);
+      pointer-events:none;
+      transition:opacity .6s ease;
+    }
+
+    body.dark-mode::before{ opacity:.05; }    /* 다크모드에선 거의 꺼두기 */
+
+    #petals{
+      position:fixed; inset:0; pointer-events:none; z-index:-1;
+    }
+
+    .subtitle{
+      margin:-10px 0 40px;
+      font-size:1.1em; font-weight:300; letter-spacing:.6px;
+      color:rgba(255,255,255,.85);
+      text-shadow:0 1px 2px rgba(0,0,0,.25);
+    }
+
+    .post{
+      width:95%; height:95%;
+      background: transparent;
+      display:flex; flex-direction:column;
+      overflow:hidden;
+    }
+
+    .post header{
+      display:flex; align-items:center; gap:12px;
+      font:600 .95rem/1 "SUIT","SF Pro Text",-apple-system,BlinkMacSystemFont,sans-serif;
+      color:#333;
+      margin-bottom:18px; position:relative;
+    }
+
+    .post header::after{
+      content:""; position:absolute; left:-32px; right:-32px; bottom:-9px;
+      height:1px; background:rgba(0,0,0,.06);
+    }
+
+    .circle-pic{
+      width:25px; height:25px; border-radius:35%;
+      background: linear-gradient(135deg,#ff9aa9 0%,#fecfef 100%);
+      color:rgba(255, 255, 255, 0.85); display:flex; justify-content:center; align-items:center;
+      font-size:0.7rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:
+        0 1px 4px 0 rgba(0, 0, 0, 0.1),
+        inset 0 0 1px rgba(255, 255, 255, 0.25);
+      text-transform:uppercase;
+    }
+
+    .handle{
+      font-weight: 300;
+      font-size: .7rem;
+      letter-spacing: .3px;
+      color: #000;
+    }
+
+    .font-badge{
+      position:absolute; right:2px; bottom:7px;
+      padding:6px 14px;
+      font:.7rem "SUIT"; font-weight:300;
+    }
+    
+    .post{
+      container-type:inline-size;
+    }
+  
+    .post blockquote{
+      flex:1; display:flex; align-items:center; justify-content:center;
+      text-align:center; margin:0 4%;
+      font-weight: 700;
+      font-size: clamp(1.4rem,8cqw,3.2rem);
+      line-height: 1.55;
+      word-break: keep-all;
+      overflow-wrap:anywhere;
+      max-height:85%;
+      letter-spacing:.25px; color:#222;
+      quotes:"“" "”";
+    }
+    
+    .post blockquote::before{
+      content:open-quote;
+      margin-right: 6px;
+      font-size:calc(1.2em); font-weight:500; color:#ffa0b8;
+    }
+
+    .post blockquote::after{
+      content:close-quote;
+      margin-left: 6px;
+      font-size:calc(1.2em); font-weight:500; color:#ffa0b8;
+    }
+
+    .post footer{
+      margin-top:22px; text-align:right;
+      font:.82rem/1 "SUIT";
+      color:rgba(0,0,0,.55); font-weight:300;
+    }
+
+    body.dark-mode .post .handle{
+      color:rgba(255,255,255,.82);
+      background:none;
+      box-shadow:none;
+    }
+
+    body.dark-mode .post blockquote{ color:#e0e0e0; }
+    body.dark-mode .post footer   { color:rgba(255,255,255,.6); }
+
+    a.font-badge-link,
+    a.font-badge-link:link,
+    a.font-badge-link:visited,
+    a.font-badge-link:hover,
+    a.font-badge-link:active {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+
+    .font-badge-link .font-badge {
+      color: inherit !important;
+    }
+
+  </style>
+
+  {% load static %}
+  <style>
+    {% for ud in users %}
+    {% if ud.ttf_file %}
+    @font-face {
+      font-family: "SoulFont-{{ ud.id }}";
+      src: url("{{ ud.ttf_file.url }}") format("truetype");
+    }
+    .quote-{{ ud.id }} {
+      font-family: "SoulFont-{{ ud.id }}" !important;
+    }
+    {% else %}
+    .quote-{{ ud.id}} {}
+    {% endif %}
+    {% endfor %}
+    .quote {
+      font-size: 1.2rem;
+      margin: 1em 0;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
+</head>
+
+<header id="topbar">
+  {% if request.user.is_authenticated %}
+    <a href="{% url 'user_page' user_id=request.user.id %}" class="topnav-link">My&nbsp;Page</a>
+    {% else %}
+    {% endif %}
+    <a href="/login/" class="topnav-link">Login</a>
+  
+  <label class="theme-toggle">
+    <input type="checkbox" id="toggle-dark">
+    <span class="toggle-track">
+      <span class="icon sun">☀︎</span>
+      <span class="icon moon">☾</span>
+    </span>
+  </label>
+</header>
+
+<canvas id="petals"></canvas>
+
+<body>
+  <h1>Hello, {{ user.username }}</h1>
+  <p class="subtitle">나만의 폰트, 나만의 감성, Feel Your Font.</p>
+
+  <div id="coverflow">
+    {% for ud in users %}
+      <section data-font-text="{{ font.text }}" data-download-url="{{ font.file.url }}">
+
+        <div class="post">
+          <header>
+            <span class="circle-pic">{{ ud.user.username|first }}</span>
+            <span class="handle">@ {{ ud.user.username }}</span>
+          </header>
+
+          <blockquote class="blockquote quote-{{ ud.id }}">{{ ud.quote }}</blockquote>
+
+          <footer>
+              <a href="{{ ud.ttf_file.url }}" download class="font-badge-link">
+                <span class="font-badge">{{ ud.font_name }}</span>
+              </a>
+          </footer>
+        </div>
+
+      </section>
+      {% empty %}
+        <section>
+          <div>There is No Soul</div>
+        </section>
+    {% endfor %}
+    <button id="arrow-left"  class="cover-arrow"><span class="arrow-icon">‹</span></button>
+    <button id="arrow-right" class="cover-arrow"><span class="arrow-icon">›</span></button>
+  </div>
+    
+  <div id="actions">
+    <button class="action-btn primary" onclick="navigateWithFade('/create/')">
+      Create&nbsp;My&nbsp;Own&nbsp;Font
+    </button>
+    <button class="action-btn" onclick="navigateWithFade('/result/')">
+	    Change&nbsp;My&nbsp;Quote
+    </button>
+  </div>
+
+  <p></p>
+  <p class="subtitle">{{ users|length }} Users Connected by Soul Font</p>
+  
+  <script>
+    // 새로 들어올 때 opacity 복구
+    function showPage() {
+      document.body.style.opacity = 1;
+    }
+
+    document.addEventListener("DOMContentLoaded", showPage);
+    window.addEventListener("pageshow", function(event) {
+      // 뒤로가기 캐시 복구까지 커버
+      if (event.persisted) {
+        showPage();
+      }
+    });    
+    function navigateWithFade(url) {
+      document.body.style.opacity = 0;
+      setTimeout(function() {
+        window.location.href = url;
+      }, 700); // transition 시간과 딱 맞게
+    }
+
+    document.addEventListener("DOMContentLoaded", showPage);
+    window.addEventListener("pageshow", function(event) {
+      if (event.persisted) {
+        showPage();
+      }
+    });  
+
+    (function() {
+      var _index = 0,
+          _coverflow = null,
+          _prevLink = null,
+          _nextLink = null,
+          _albums = [],
+          _transformName = Modernizr.prefixed('transform'),
+          OFFSET = 120,    // 좌우 이동 거리(%)
+          ROTATION = 90,  // 회전 각도 (deg)
+          BASE_ZINDEX = 10,
+          MAX_ZINDEX = 42;
+    
+      function get(selector) {
+          return document.querySelector(selector);
+      }
+
+      function render() {
+          for (var i = 0; i < _albums.length; i++) {
+              if (i < _index) {
+                  _albums[i].style[_transformName] = "translateX(-" + (OFFSET * (_index - i)) + "%) rotateY(" + ROTATION + "deg)";
+                  _albums[i].style.zIndex = BASE_ZINDEX + i;
+              }
+              if (i === _index) {
+                  _albums[i].style[_transformName] = "rotateY(0deg) translateZ(140px) scale(1.3)";
+                  _albums[i].style.zIndex = MAX_ZINDEX;
+              }
+              if (i > _index) {
+                  _albums[i].style[_transformName] = "translateX(" + (OFFSET * (i - _index)) + "%) rotateY(-" + ROTATION + "deg)";
+                  _albums[i].style.zIndex = BASE_ZINDEX + (_albums.length - i);
+              }
+          }
+      }
+    
+      function flowRight() {
+          if (_index > 0) {
+              _index--;
+              render();
+          }
+      }
+    
+      function flowLeft() {
+          if (_albums.length > (_index + 1)) {
+              _index++;
+              render();
+          }
+      }
+    
+      function keyDown(event) {
+          switch(event.keyCode) {
+              case 37: flowRight(); break;
+              case 39: flowLeft(); break;
+          }
+      }
+    
+      function registerEvents() {
+          _prevLink.addEventListener('click', flowRight, false);
+          _nextLink.addEventListener('click', flowLeft, false);
+          document.addEventListener('keydown', keyDown, false);         
+      }
+    
+      function init() {
+          _albums = Array.prototype.slice.call(document.querySelectorAll('#coverflow section'));
+          _index = 0;
+          _coverflow = get('#coverflow');
+
+          _prevLink = get('#arrow-left');
+          _nextLink = get('#arrow-right');
+    
+          // 각 섹션에 data-cover 속성 값으로 배경 이미지 설정
+          for (var i = 0; i < _albums.length; i++) {
+              var url = _albums[i].getAttribute("data-cover");
+              if(url) {
+                _albums[i].style.backgroundImage = "url(" + url + ")";
+              }
+          }
+    
+          registerEvents();
+          render();
+      }
+    
+      init();
+    }());
+
+    (function(){
+      const chk  = document.getElementById('toggle-dark');
+      const body = document.body;
+    
+      // 저장된 테마 복원
+      if(localStorage.getItem('theme')==='dark'){
+        body.classList.add('dark-mode');
+        chk.checked = true;
+      }
+    
+      // 토글 동작
+      chk.addEventListener('change',()=>{
+        body.classList.toggle('dark-mode', chk.checked);
+        localStorage.setItem('theme', chk.checked ? 'dark' : 'light');  
+      });
+    })();
+    
+    document.addEventListener('DOMContentLoaded',()=>{
+    
+      /* 간단한 캔버스 파티클 */
+      const cvs=document.getElementById('petals'), ctx=cvs.getContext('2d');
+      let W,H, petals=[];
+    
+      function resize(){ W=cvs.width=innerWidth; H=cvs.height=innerHeight; }
+      resize(); addEventListener('resize', resize);
+    
+      function Petal(){
+        this.x=Math.random()*W;
+        this.y=Math.random()*-H;
+        this.r=6+Math.random()*8;           // 크기
+        this.vy=1+Math.random()*1.2;        // 속도
+        this.vx=Math.random()-.5;           // 좌우
+        this.ang=Math.random()*360;
+        this.spin=.2+Math.random()*.4;
+        this.draw=()=>{
+          ctx.save();
+          ctx.fillStyle='rgba(255,200,220,.8)';
+          ctx.translate(this.x,this.y);
+          ctx.rotate(this.ang);
+          ctx.scale(1,.6);
+          ctx.beginPath();
+          ctx.moveTo(0,-this.r);
+          for(let i=0;i<5;i++){
+            ctx.rotate(Math.PI/5);
+            ctx.lineTo(0,-this.r*0.5);
+            ctx.rotate(Math.PI/5);
+            ctx.lineTo(0,-this.r);
+          }
+          ctx.fill(); ctx.restore();
+        };
+        this.update=()=>{
+          this.y+=this.vy; this.x+=this.vx; this.ang+=this.spin;
+          if(this.y>H+50) { this.y=-50; this.x=Math.random()*W; }
+          this.draw();
+        };
+      }
+    
+      for(let i=0;i<40;i++) petals.push(new Petal());
+    
+      (function animate(){
+        ctx.clearRect(0,0,W,H);
+        petals.forEach(p=>p.update());
+        requestAnimationFrame(animate);
+      })();
+    });
+
+  </script>
+
+</body>
+</html>

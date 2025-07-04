@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign in to Soul Font</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #ffe6f0 0%, #fff0f6 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 230, 240, 0.6);
+      backdrop-filter: blur(4px);
+    }
+
+    .login-card {
+      position: relative;
+      background: #fff;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 380px;
+      padding: 40px 32px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      z-index: 1;
+    }
+
+    .blossom-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .login-card h2 {
+      font-size: 22px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .login-card .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .login-card form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .login-card input {
+      padding: 12px 16px;
+      font-size: 14px;
+      border: 1px solid #f4c2c2;
+      border-radius: 12px;
+      background: #fff5f8;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .login-card input:focus {
+      border-color: #f78fb3;
+      box-shadow: 0 0 0 3px rgba(247, 143, 179, 0.3);
+    }
+
+    .login-card button {
+      padding: 12px;
+      background-color: #ff9ff3;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+
+    .login-card button:hover {
+      background-color: #f78fb3;
+      box-shadow: 0 4px 12px rgba(247, 143, 179, 0.4);
+    }
+
+    .login-card .forgot {
+      display: block;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #f78fb3;
+      text-decoration: none;
+    }
+
+    .login-card .forgot:hover {
+      text-decoration: underline;
+    }
+
+    .login-card hr {
+      border: none;
+      border-top: 1px solid #ffe6f0;
+      margin: 20px 0;
+    }
+
+    .login-card .signup-link {
+      font-size: 14px;
+      color: #ff9ff3;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .login-card .signup-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-backdrop"></div>
+  <div class="login-card">
+    <div class="blossom-icon">🌸</div>
+    <h2>Sign in to Soul Font</h2>
+    <div class="subtitle">Feel Your Font</div>
+
+    <form method="POST">
+      {% csrf_token %}
+      <input type="text" name="username" placeholder="사용자 이름 또는 이메일" required />
+      <input type="password" name="password" placeholder="비밀번호" required />
+      <button type="submit">로그인</button>
+    </form>
+
+    <a href="{% url 'pw_reset' %}" class="forgot">비밀번호를 잊으셨나요?</a>
+    <hr/>
+    <a href="{% url 'signup' %}" class="signup-link">계정 만들기</a>
+  </div>
+</body>
+</html>

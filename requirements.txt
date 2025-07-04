@@ -1,0 +1,15 @@
+torch
+torchvision
+pillow
+PyYAML
+tqdm
+scikit-image
+imageio
+matplotlib
+fire
+fonttools
+tensorboardX
+sconf
+pdf2image
+h5py
+gdown

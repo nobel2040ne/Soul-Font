@@ -1,0 +1,23 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "main": "generateTTF.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "canvas": "^3.1.0",
+    "express": "^5.1.0",
+    "fonteditor-core": "^2.4.1",
+    "graceful-fs": "^4.2.11",
+    "imagetracerjs": "^1.2.6",
+    "opentype.js": "^1.3.4",
+    "pngjs": "^7.0.0",
+    "svg2ttf": "^6.0.3",
+    "svgicons2svgfont": "^2.0.2"
+  }
+}

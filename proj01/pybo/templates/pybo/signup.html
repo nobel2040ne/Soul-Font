@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>계정 만들기 – Soul Font</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Noto Sans KR','Roboto',sans-serif;
+      background: linear-gradient(135deg, #ffe6f0 0%, #fff0f6 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,230,240,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 0;
+    }
+    .signup-card {
+      position: relative;
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      z-index: 1;
+      text-align: center;
+    }
+    .blossom-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .signup-card h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    .signup-card .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+    .signup-card form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .signup-card input {
+      padding: 12px 16px;
+      font-size: 14px;
+      border: 1px solid #f4c2c2;
+      border-radius: 12px;
+      background: #fff5f8;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .signup-card input:focus {
+      border-color: #f78fb3;
+      box-shadow: 0 0 0 3px rgba(247,143,179,0.3);
+    }
+    .signup-card .btn-area {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .signup-card .btn-area button {
+      padding: 12px 24px;
+      background-color: #ff9ff3;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .signup-card .btn-area button:hover {
+      background-color: #f78fb3;
+      box-shadow: 0 4px 12px rgba(247,143,179,0.4);
+    }
+    .signup-card .footer {
+      margin-top: 24px;
+      font-size: 13px;
+      color: #999;
+    }
+    .signup-card .footer a {
+      color: #f78fb3;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .signup-card .footer a:hover {
+      text-decoration: underline;
+    }
+    .signup-card form .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 16px;
+    }
+
+    .signup-card form .form-group label {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .signup-card form .form-group input {
+      padding: 12px 16px;
+      font-size: 14px;
+      border: 1px solid #f4c2c2;
+      border-radius: 12px;
+      background: #fff5f8;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-backdrop"></div>
+
+  <div class="signup-card">
+    <div class="blossom-icon">🌸</div>
+    <h1>계정 만들기</h1>
+    <div class="subtitle">Feel Your Font</div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="username">사용자 아이디 <span style="color:#f78fb3;">*</span></label>
+            <input
+              id="username"
+              type="text"
+              name="username"
+              placeholder="soulsoul"
+              required
+            />
+            {% for err in form.username.errors %}
+              <p style="color:red;">{{ err }}</p>
+            {% endfor %}
+        </div>        
+      
+        <div class="form-group">
+          <label for="first_name">이름 <span style="color:#f78fb3;">*</span></label>
+          <input
+            id="first_name"
+            type="text"
+            name="first_name"
+            placeholder="길동"
+            required
+          />
+        </div>
+      
+        <div class="form-group">
+          <label for="last_name">성 (선택)</label>
+          <input
+            id="last_name"
+            type="text"
+            name="last_name"
+            placeholder="홍"
+          />
+        </div>
+      
+        <div class="form-group">
+          <label for="password1">비밀번호 <span style="color:#f78fb3;">*</span></label>
+          <input
+            id="password1"
+            type="password"
+            name="password1"
+            placeholder="비밀번호를 입력해주세요"
+            required
+          />
+        </div>
+      
+        <div class="form-group">
+          <label for="password2">비밀번호 확인 <span style="color:#f78fb3;">*</span></label>
+          <input
+            id="password2"
+            type="password"
+            name="password2"
+            placeholder="한 번 더 입력해주세요"
+            required
+          />
+        </div>
+      
+        <div class="btn-area">
+          <button type="submit">완료</button>
+        </div>
+      </form>
+
+    <div class="footer">
+      이미 계정이 있으신가요?
+      <a href="{% url 'login' %}">로그인</a>
+    </div>
+  </div>
+</body>
+</html>

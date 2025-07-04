@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soul Font</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 50%, #ffdde1 100%);
+            min-height: 100vh;
+            font-family: 'SUIT';
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.7s ease-in-out;
+        }
+
+        h1 {
+            margin-top: 40px;
+            font-size: 2.5rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            margin: 40px 0;
+            width: 90%;
+            max-width: 900px;
+        }
+
+        .combined-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            box-shadow:
+              0 8px 32px rgba(0, 0, 0, 0.2),
+              inset 0 0 8px rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-wrap: wrap;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .half-box {
+            flex: 1;
+            min-width: 280px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .half-box:first-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .half-box p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .file-list a {
+            width: 100%;
+            text-decoration: none;
+        }
+
+        .file-button {
+            width: 100%;
+            min-height: 50px;
+            padding: 0 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+            text-shadow:
+              0 1px 2px rgba(0, 0, 0, 0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow:
+              0 6px 20px rgba(0, 0, 0, 0.1),
+              inset 0 0 6px rgba(255, 255, 255, 0.2);
+        }
+
+        .file-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow:
+              0 12px 40px rgba(0, 0, 0, 0.15),
+              inset 0 0 12px rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .file-button:active {
+            transform: scale(0.98) translateY(1px);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+        }
+
+        .upload-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .upload-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .upload-item label {
+            width: auto;
+            font-size: 1rem;
+            text-align: left;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .file-input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-align: left;
+            appearance: none;
+            width: 100%;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        .file-input:hover,
+        .file-input:focus {
+            border-color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+        }
+
+        .file-input::file-selector-button {
+            background: rgba(255, 255, 255, 0.35);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .file-input::file-selector-button:hover {
+            background: rgba(255, 255, 255, 0.55);
+        }
+        
+        .create-button {
+            margin-top: 30px;
+            padding: 14px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 20px;
+        
+            background: rgba(255, 255, 255, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+        
+            /* 흐림 효과를 위한 백드롭 필터 */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        
+            /* 미묘한 그림자 및 광택 효과 */
+            box-shadow:
+              0 8px 32px 0 rgba(0, 0, 0, 0.1),
+              inset 0 0 8px rgba(255, 255, 255, 0.25);
+        
+            /* 텍스트 색상은 대비를 위해 밝게 */
+            color: rgba(255, 255, 255, 0.85);
+        
+            /* 부드러운 전환 효과 */
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .create-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow:
+              0 12px 48px 0 rgba(0, 0, 0, 0.15),
+              inset 0 0 12px rgba(255, 255, 255, 0.35);
+        }
+        .create-button:active {
+            transform: scale(0.98) translateY(1px);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+        }
+        .hidden-csrf {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .combined-box {
+                flex-direction: column;
+            }
+            .half-box:first-child {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Your Own Font</h1>
+    <div class="container">
+        <form id='fontForm' action="{% url 'learning' %}" method="post" enctype="multipart/form-data" style="width: 100%;">
+            {% csrf_token %}
+            <div class="combined-box">
+                <div class="half-box">
+                    <p>Download Template</p>
+                    <div class="file-list">
+                        <a href="{% url 'download_template' %}?file=28_template.pdf">
+                            <button type="button" class="file-button">Template 1</button>
+                        </a>
+                    </div>
+                </div>
+                <div class="half-box">
+                    <p>Upload Your PDF Template</p>
+                    <div class="upload-list">
+                        <div class="upload-item">
+                            <input id="template" class="file-input" type="file" name="template" accept="applicatoin/pdf">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: center;">
+                <button type="submit" class="file-button create-button">Create Font</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('fontForm').addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('template');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('PDF 템플릿 파일을 업로드해주세요.');
+            } else if (!fileInput.files[0].name.toLowerCase().endsWith('.pdf')) {
+                e.preventDefault();
+                alert('PDF 파일만 업로드할 수 있습니다.');
+            }
+        });
+    </script>
+
+</body>
+</html>

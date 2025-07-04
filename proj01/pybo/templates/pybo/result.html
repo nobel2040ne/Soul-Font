@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Soul Font Result</title>
+  <style>
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    body {
+      font-family: 'SUIT';
+      background: linear-gradient(135deg, #ffdde1 0%, #ee9ca7 50%, #ffdde1 100%);
+      display: flex;
+      justify-content: center; /* 가로 중앙 */
+      align-items: center;     /* 세로 중앙 */
+      overflow: hidden;
+      opacity: 0;
+      animation: fadeIn 1s forwards;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .box {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .box h2 {
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(6px);
+      color: #333;
+      font-size: 1rem;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      box-sizing: border-box;
+      resize: none;
+    }
+    textarea {
+      height: 180px;
+    }
+
+    .submit-button {
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color:rgba(255, 255, 255, 0.85);
+      background:linear-gradient(135deg,#ff8bb3 0%, #ffa1c5 50%, #ffb9d6 100%);
+      border: none;
+      border-radius: 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:
+        0 8px 32px 0 rgba(0,0,0,0.1),
+        inset 0 0 8px rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      transition:transform .25s ease,
+                 background .35s ease,
+                 box-shadow .35s ease;
+      display: block;        /* 중앙 정렬을 위해 block, margin auto 적용 */
+      margin: 10px auto 0 auto;
+      box-sizing: border-box;
+    }
+
+    .submit-button:hover {
+      background:linear-gradient(135deg,#ffa1c5 0%, #ff8bb3 100%);
+      box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.15),
+        inset 0 0 12px rgba(255, 255, 255, 0.35);
+      transform: scale(1.035) translateY(-1px);
+    }
+
+    .submit-button:active {
+      transform: scale(0.98) translateY(1px);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+    }    
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 12px;
+      }
+      .box {
+        padding: 24px 16px;
+      }
+      .box h2 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+
+  {% load static %}
+  <style>
+    {% if user.ttf_file %}
+    @font-face {
+      font-family: "SoulFont-{{ user.id }}";
+      src: url("{{ user.ttf_file.url }}") format("truetype");
+    }
+    .quote {
+      font-family: "SoulFont-{{ user.id }}" !important;
+    }
+    {% else %}
+    .quote {}
+    {% endif %}
+
+    .quote {
+      font-size: 1.1rem;
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="box right">
+      <h2>Your Quote</h2>
+      
+      <form method="post" action="{% url 'result' %}">
+        {% csrf_token %}
+
+        <input
+          type="text"
+          name="font_name"
+          placeholder="Enter Your Font Name"
+          value="{{ font_name }}"
+          required
+        />
+
+        <textarea
+          name="quote"
+	        class="quote"
+          placeholder="Write your quote here"
+          required
+        >{{ quote }}</textarea>
+
+        <button type="submit" class="submit-button">Submit</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
