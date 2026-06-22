@@ -10,13 +10,15 @@ from .models import Font, UserData
 from .forms import CustomUserCreationForm
 
 import os, threading, shutil, subprocess
-from font_processor import FontStyleProcessor
+from font_processor import FontStyleProcessor, DEFAULT_CHARSET
+from set_font_metadata import apply_metadata
+
+DEFAULT_FONT_NAME = "My Handwriting"  # default family name until the user renames it
+FULL_CHARSET = 'data/charset/korean11172.txt'  # 'slow' option: full Hangul coverage
 
 def index(request):
     users = UserData.objects.select_related('user').all()
     fonts = Font.objects.all()
-    print("Fonts:", fonts)
-    print(users)
     return render(request, 'pybo/index.html', {'fonts': fonts, 'users': users})
 
 def signup_view(request):
@@ -62,7 +64,10 @@ def user_page(request, user_id):
     user_data = get_object_or_404(UserData, user__id=user_id)
     templates = user_data.templates.all()[:3]
     context = {
+        'user_data': user_data,
+        'profile_user': user_data.user,
         'font_name': user_data.font_name,
+        'profile_image': user_data.profile_image,
         'templates': templates,
         'ttf_file': user_data.ttf_file,
         'quote': user_data.quote,
@@ -72,18 +77,57 @@ def user_page(request, user_id):
 def create_font(request):
     return render(request, 'pybo/create_font.html')
 
+def about(request):
+    return render(request, 'pybo/about.html')
+
 @login_required
 def result(request):
     user_data, _ = UserData.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        user_data.font_name = request.POST.get('font_name', '').strip()
+        new_name = request.POST.get('font_name', '').strip()
+        user_data.font_name = new_name
         user_data.quote = request.POST.get('quote', '').strip()
+        user_data.author = request.POST.get('author', '').strip()
+        user_data.copyright = request.POST.get('copyright', '').strip()
+        user_data.license_text = request.POST.get('license_text', '').strip()
+        user_data.license_url = request.POST.get('license_url', '').strip()
+        user_data.description = request.POST.get('description', '').strip()
+        user_data.version = request.POST.get('version', '').strip() or '1.000'
+
+        if request.POST.get('remove_profile_image') and user_data.profile_image:
+            user_data.profile_image.delete(save=False)
+            user_data.profile_image = None
+
+        profile_image = request.FILES.get('profile_image')
+        if profile_image:
+            if user_data.profile_image:
+                user_data.profile_image.delete(save=False)
+            user_data.profile_image = profile_image
+
         user_data.save()
+
+        # Rewrite the shipped TTF's metadata (incl. the Korean family name) to what the
+        # user entered, so the font carries it when installed — no manual FontForge step.
+        if new_name and user_data.ttf_file:
+            try:
+                apply_metadata(
+                    user_data.ttf_file.path, new_name,
+                    user_id=str(request.user.id),
+                    designer=user_data.author,
+                    copyright=user_data.copyright,
+                    license_text=user_data.license_text,
+                    license_url=user_data.license_url,
+                    description=user_data.description,
+                    version=user_data.version,
+                )
+            except Exception as e:
+                print(f"[WARN] failed to update font metadata: {e}")
 
         return redirect('user_page', user_id=request.user.id)
 
     context = {
+        'user_data': user_data,
         'font_name': user_data.font_name,
         'quote': user_data.quote,
         'ttf_file': user_data.ttf_file,
@@ -107,9 +151,9 @@ os.makedirs(TTF_OUTPUT_DIR, exist_ok=True)
 
 PE_SCRIPT = os.path.join(settings.BASE_DIR, 'generate.pe')
 
-def _background_pipeline(template_pdf_path, user_id):
+def _background_pipeline(template_pdf_path, user_id, charset_path=DEFAULT_CHARSET):
     style_id = f"user_{user_id}"
-    
+
     # [추가됨] 사용자별 폰트 생성 임시 디렉토리 경로
     user_font_dir = os.path.join(settings.BASE_DIR, 'FONT', str(user_id))
 
@@ -118,8 +162,8 @@ def _background_pipeline(template_pdf_path, user_id):
         user_pdf_path = os.path.join(UPLOAD_FOLDER, f"{style_id}.pdf")
         shutil.copyfile(template_pdf_path, user_pdf_path)
 
-        print("[DEBUG] Starting FontStyleProcessor...")
-        proc = FontStyleProcessor(user_pdf_path)
+        print(f"[DEBUG] Starting FontStyleProcessor (charset={charset_path})...")
+        proc = FontStyleProcessor(user_pdf_path, charset_path=charset_path)
         proc.run_all()
         print("[DEBUG] FontStyleProcessor finished")
 
@@ -162,14 +206,17 @@ def _background_pipeline(template_pdf_path, user_id):
 
         shutil.move(src_ttf_path, final_ttf_path)
 
+        # 3.5) 메타데이터(한글 폰트 이름 포함) 적용 — fonttools
+        apply_metadata(final_ttf_path, DEFAULT_FONT_NAME, user_id=str(user_id))
+
         print(f"[DONE] user_id={user_id} TTF 생성 완료 → {final_ttf_path}")
 
         # 4) UserData 업데이트
         user_data, _ = UserData.objects.get_or_create(user_id=user_id)
-        
+
         # FileField에 상대경로 저장
         user_data.ttf_file.name = os.path.join('ttf_files', final_ttf_filename)
-        user_data.font_name = f"My Font"
+        user_data.font_name = DEFAULT_FONT_NAME
         user_data.save()
 
     except subprocess.CalledProcessError as e:
@@ -201,9 +248,12 @@ def learning(request):
         saved_name = fs.save(request.FILES['template'].name, request.FILES['template'])
         full_template_path = os.path.join(TEMP_UPLOAD_DIR, saved_name)
 
+        # Fast (~2,350 common Hangul) vs Full (11,172) generation.
+        charset_path = FULL_CHARSET if request.POST.get('speed') == 'full' else DEFAULT_CHARSET
+
         threading.Thread(
             target=_background_pipeline,
-            args=(full_template_path, request.user.id),
+            args=(full_template_path, request.user.id, charset_path),
             daemon=True
         ).start()
 

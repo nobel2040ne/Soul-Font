@@ -1,13 +1,27 @@
-import os, yaml, subprocess
+import os, shutil, yaml, subprocess
 import numpy as np
 from PIL import Image, ImageChops
-from pdf2image import convert_from_path #type: ignore
-import subprocess
+from pdf2image import convert_from_path  # type: ignore
+
 from inference import main as inference_main
+from char_layout import KOR_STYLE_CHARS, split_cells
+
+# --- Korean style reference characters, in the same order as the template cells ---
+STYLE_CHARS = KOR_STYLE_CHARS
+
+# --- Model architecture constants (must match the checkpoint) ---
+MODEL_C = 32
+MODEL_N_COMPS = 68
+MODEL_N_COMP_TYPES = 3
+LANGUAGE = 'kor'
+
+# Default target set: KS X 1001 common-use 2,350 Hangul (much faster than the full
+# 11,170 and covers everyday Korean). Swap to korean11172.txt for full coverage.
+DEFAULT_CHARSET = 'data/charset/korean2350.txt'
 
 
 class FontStyleProcessor:
-    def __init__(self, pdf_path):
+    def __init__(self, pdf_path, charset_path=DEFAULT_CHARSET):
         self.pdf_path = pdf_path
         self.base_name = os.path.splitext(os.path.basename(pdf_path))[0]
         self.output_dir = f"style/{self.base_name}"
@@ -16,16 +30,16 @@ class FontStyleProcessor:
         self.yaml_path = f"configs/{self.base_name}.yaml"
         self.checkpoint = "checkpoints/korean-handwriting.pth"
         self.save_dir = f"static/outputs/{self.base_name}"
+        self.charset_path = charset_path
         os.makedirs(self.output_dir, exist_ok=True)
-
 
     def convert_pdf_to_images(self):
         images = convert_from_path(self.pdf_path, dpi=300)
         for i, img in enumerate(images):
-            fname = f"{self.output_dir}/{self.base_name}_p{i+1}.png" if len(images) > 1 else f"{self.output_dir}/{self.base_name}.png"
-            img.save(fname, dpi=(300, 300))  
+            fname = (f"{self.output_dir}/{self.base_name}_p{i+1}.png"
+                     if len(images) > 1 else f"{self.output_dir}/{self.base_name}.png")
+            img.save(fname, dpi=(300, 300))
             print(f"[SAVE] {fname}")
-
 
     def trim_and_save_images(self):
         def trim_whitespace(path):
@@ -34,8 +48,7 @@ class FontStyleProcessor:
             diff = ImageChops.difference(img, bg)
             bbox = diff.getbbox()
             if bbox:
-                img = img.crop(bbox)
-                img.save(path)
+                img.crop(bbox).save(path)
 
         for fname in os.listdir(self.output_dir):
             if fname.lower().endswith((".png", ".jpg", ".jpeg")):
@@ -44,9 +57,8 @@ class FontStyleProcessor:
         subprocess.run([
             "python", "style/crop.py",
             f"--src_dir={self.output_dir}",
-            f"--dst_dir={self.cropped_dir}"
+            f"--dst_dir={self.cropped_dir}",
         ], check=True)
-
 
     def clean_images(self):
         os.makedirs(self.cleaned_dir, exist_ok=True)
@@ -58,68 +70,63 @@ class FontStyleProcessor:
                 img_cleaned = Image.fromarray(img_bin).resize((128, 128), Image.Resampling.LANCZOS)
                 img_cleaned.save(os.path.join(self.cleaned_dir, fname))
 
+    def _load_target_chars(self):
+        with open(self.charset_path, 'r', encoding='utf-8') as f:
+            return [line.strip() for line in f if line.strip()]
+
+    def _cleaned_paths(self):
+        return [
+            os.path.join(self.cleaned_dir, f)
+            for f in sorted(os.listdir(self.cleaned_dir)) if f.endswith(".png")
+        ]
 
     def generate_yaml(self, target_chars):
-        style_imgs = [os.path.join(self.cleaned_dir, f) for f in sorted(os.listdir(self.cleaned_dir)) if f.endswith(".png")]
-        style_chars = list("각깪냓댼떥렎멷볠뽉솲쐛욄죭쭖춣퀨튑퓺흣읬잉잊잋잌잍잎잏이")
+        # Only the first 28 cells are Korean style references for the model; any extra
+        # cells are English/special glyphs handled by copy_traced_glyphs().
+        style_imgs, _ = split_cells(self._cleaned_paths())
         cfg = {
             'style_imgs': style_imgs,
-            'style_chars': style_chars,
-            'charset_path': 'data/charset/korean11172.txt',
+            'style_chars': STYLE_CHARS,
+            'charset_path': self.charset_path,
             'output_dir': self.save_dir,
             'checkpoint': self.checkpoint,
             'num_font_samples': 1,
             'target_chars': target_chars,
-            'C': 32,
-            'n_comps': 68,
-            'n_comp_types': 3,
-            'language': 'kor'
+            'C': MODEL_C,
+            'n_comps': MODEL_N_COMPS,
+            'n_comp_types': MODEL_N_COMP_TYPES,
+            'language': LANGUAGE,
         }
         os.makedirs(os.path.dirname(self.yaml_path), exist_ok=True)
         with open(self.yaml_path, 'w', encoding='utf-8') as f:
             yaml.dump(cfg, f, allow_unicode=True)
 
-
     def run_inference(self):
-        try:
-            print(f"[DEBUG] Running inference with yaml: {self.yaml_path}")
-            inference_main(self.yaml_path, self.checkpoint, self.save_dir)
-            print(f"[DEBUG] Inference done. Output dir contents: {os.listdir(self.save_dir)}")
-        except Exception as e:
-            import traceback
-            print("[EXCEPTION] Inference failed:")
-            print(traceback.format_exc())
-            raise
-
-
-    def generate_sample_image(self):
-        charset_file = 'data/charset/korean11172.txt'
-        with open(charset_file, 'r', encoding='utf-8') as f:
-            all_chars = [line.strip() for line in f if line.strip()]
-
-        # cho = [chr(cp) for cp in range(0x3131, 0x314E + 1)]
-        # jung = [chr(cp) for cp in range(0x314F, 0x3163 + 1)]
-        # jamos = cho + jung
-
-        # all_chars = jamos + syllables
-
+        target_chars = self._load_target_chars()
         os.makedirs(self.save_dir, exist_ok=True)
+        self.generate_yaml(target_chars)
+        print(f"[INFO] Generating {len(target_chars)} Korean characters")
+        inference_main(self.yaml_path, self.checkpoint, self.save_dir)
+        print("[INFO] All Korean characters generated successfully.")
 
-        self.generate_yaml(all_chars)
-        
-        try:
-            print(f"[DEBUG] Generating for {len(all_chars)} characters")
-            inference_main(self.yaml_path, self.checkpoint, self.save_dir)
-            print("[INFO] All characters generated successfully.")
+    def copy_traced_glyphs(self):
+        """Embed English/special glyphs by tracing the user's own handwriting.
 
-        except Exception as e:
-            import traceback
-            print(f"[ERROR] Inference failed for the batch: {e}")
-            print(traceback.format_exc())
-
+        The model only knows Hangul, so these cells bypass it: each cleaned handwriting
+        image is copied straight into the output as inferred_<CODEPOINT>.png, which
+        generateTTF.js then vectorizes into the font like any other glyph.
+        """
+        _, traced_glyphs = split_cells(self._cleaned_paths())
+        os.makedirs(self.save_dir, exist_ok=True)
+        for char, src in traced_glyphs:
+            dst = os.path.join(self.save_dir, f"inferred_{ord(char):04X}.png")
+            shutil.copyfile(src, dst)
+        if traced_glyphs:
+            print(f"[INFO] Embedded {len(traced_glyphs)} traced ENG/special glyphs")
 
     def run_all(self):
         self.convert_pdf_to_images()
         self.trim_and_save_images()
         self.clean_images()
-        self.generate_sample_image()
+        self.run_inference()
+        self.copy_traced_glyphs()

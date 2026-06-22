@@ -1,0 +1,13 @@
+<div class="menu-bar">
+  <a class="brand" href="{% url 'index' %}">SoulFont</a>
+  <a href="{% url 'index' %}">Home</a>
+  <a href="{% url 'create_font' %}">Create</a>
+  <a href="{% url 'about' %}">About</a>
+  <span class="spacer"></span>
+  {% if request.user.is_authenticated %}
+    <a href="{% url 'user_page' user_id=request.user.id %}">My&nbsp;Page</a>
+    <a href="{% url 'logout' %}">Log&nbsp;Out</a>
+  {% else %}
+    <a href="{% url 'login' %}">Log&nbsp;In</a>
+  {% endif %}
+</div>

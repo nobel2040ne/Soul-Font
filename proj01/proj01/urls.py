@@ -16,11 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin #type: ignore
 from django.urls import path, include #type: ignore
+from django.views.generic import RedirectView #type: ignore
 from pybo import views
 from django.conf import settings #type: ignore
 from django.conf.urls.static import static #type: ignore
 
 urlpatterns = [
+    path('', RedirectView.as_view(pattern_name='index', permanent=False)),
     path('admin/', admin.site.urls),
     path('pybo/', include('pybo.urls')),
     path('signup/', views.signup_view, name='signup'),

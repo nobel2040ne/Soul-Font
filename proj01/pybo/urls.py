@@ -12,6 +12,7 @@ urlpatterns = [
     path('user/<int:user_id>/', views.user_page, name='user_page'),
     path('admin/', views.admin_page, name='admin_page'),
     path('create/', views.create_font, name='create_font'),
+    path('about/', views.about, name='about'),
     path('learning/', views.learning, name='learning'),
     path('result/', views.result, name='result'),
     path('download-template/', views.download_template, name='download_template'),

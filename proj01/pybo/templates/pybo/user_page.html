@@ -1,151 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>User Page – {{ user.username }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ profile_user.username }} — SoulFont</title>
+  <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/retro.css' %}">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'SUIT';
-      background: linear-gradient(135deg, #ffe6f0 0%, #fff0f6 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(255, 230, 240, 0.6);
-      backdrop-filter: blur(4px);
-    }
-
-    .login-card {
-      position: relative;
-      background: #fff;
-      border-radius: 24px;
-      width: 100%;
-      max-width: 460px;
-      padding: 40px 32px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-      text-align: left;
-      z-index: 1;
-    }
-
-    .login-card h1 {
-      font-size: 26px;
-      margin-bottom: 8px;
-      color: #f78fb3;
-    }
-
-    .login-card h2 {
-      font-size: 20px;
-      color: #666;
-      margin-bottom: 16px;
-    }
-
-    .section {
-      margin-top: 24px;
-    }
-
-    .section h3 {
-      font-size: 18px;
-      margin-bottom: 10px;
-      color: #f78fb3;
-    }
-
-    .download-link {
-      display: inline-block;
-      margin: 4px 0;
-      padding: 8px 12px;
-      background-color: #ff9ff3;
-      color: #fff;
-      border-radius: 12px;
-      text-decoration: none;
-      font-size: 14px;
-      transition: background-color 0.2s;
-    }
-
-    .download-link:hover {
-      background-color: #f78fb3;
-    }
-
-    blockquote {
-      background: #fff5f8;
-      border-left: 4px solid #f78fb3;
-      padding: 12px 16px;
-      font-style: italic;
-      margin-top: 8px;
-      border-radius: 8px;
-      color: #555;
-    }
-
-    p {
-      font-size: 14px;
-      color: #666;
-      margin-top: 4px;
-    }
-
-    .home-button {
-      display: inline-blick;
-       padding: 8px 16px;
-       background-color: #ff9ff3;
-       color: #fff;
-       border-radius: 12px;
-       text-decoration: none;
-       font-size: 14px;
-       transition: background-color 0.2s;
-    }
-    .home-button:hover{
-       background-color: #f78fb3;
-    }
-
-    .home-button-wrapper {
-	    text-align: right;
-	margin-top: 16px;
-}
-
+    .preview { border: 1px solid #000; padding: 34px 18px; text-align: center; margin: 4px 0 16px;
+               min-height: 120px; display: flex; align-items: center; justify-content: center; }
+    .preview .q { font-size: 2.2rem; line-height: 1.4; word-break: keep-all; }
+    {% if ttf_file %}
+    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); }
+    .preview .q { font-family: "SoulFont-{{ profile_user.id }}", "Geneva", sans-serif; }
+    {% endif %}
+    .meta-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #ccc; font-size: 14px; }
+    .meta-row .k { font-weight: bold; }
   </style>
 </head>
-<body>
-  <div class="modal-backdrop"></div>
+<body class="desktop">
+  {% include 'pybo/_menubar.html' %}
 
-  <div class="login-card">
-    <h1>User Page</h1>
-    <h2>Welcome, {{ user.username }}</h2>
+  <div class="app">
+    <div class="window app-window narrow">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">{{ font_name }}</h1>
+      </div>
+      <div class="separator"></div>
 
-    <div class="section">
-      <h3>You Can View Your Font and Name & Quote</h3>
+      <div class="window-pane">
+        <h2 class="page-title">{{ font_name }}</h2>
+        <div class="profile-page-head">
+          {% if profile_image %}
+            <img class="profile-avatar" src="{{ profile_image.url }}" alt="{{ profile_user.username }} profile image">
+          {% else %}
+            <div class="profile-avatar">{{ profile_user.username|first|upper }}</div>
+          {% endif %}
+          <div class="profile-copy">
+            <div class="profile-name">@ {{ profile_user.username }}</div>
+            {% if request.user.id == profile_user.id %}
+              <a class="btn" href="{% url 'result' %}">Edit Profile</a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="preview">
+          {% if quote %}<div class="q font-preview">{{ quote }}</div>{% else %}<div class="muted">No quote yet.</div>{% endif %}
+        </div>
+
+        <div class="meta">
+          {% if user_data.author %}<div class="meta-row"><span class="k">Author</span><span>{{ user_data.author }}</span></div>{% endif %}
+          {% if user_data.version %}<div class="meta-row"><span class="k">Version</span><span>{{ user_data.version }}</span></div>{% endif %}
+          {% if user_data.license_text %}<div class="meta-row"><span class="k">License</span><span>{{ user_data.license_text }}</span></div>{% endif %}
+          {% if user_data.copyright %}<div class="meta-row"><span class="k">Copyright</span><span>{{ user_data.copyright }}</span></div>{% endif %}
+        </div>
+
+        <div class="right-row">
+          {% if ttf_file %}<a class="btn default" href="{{ ttf_file.url }}" download>Download Font</a>{% endif %}
+          <a class="btn" href="{% url 'index' %}">Home</a>
+        </div>
+      </div>
     </div>
-
-    <div class="section">
-      <h3>Generated TTF File</h3>
-      {% if ttf_file %}
-        <a class="download-link" href="{{ ttf_file.url }}" download>{{ ttf_file.name }}</a>
-      {% else %}
-        <p>No TTF file uploaded yet.</p>
-      {% endif %}
-    </div>
-
-    <div class="section">
-      <h3>Name & Quote</h3>
-      {% if quote %}
-        <blockquote> <strong>{{ font_name }}</strong> <p> {{ quote }}</blockquote>
-      {% else %}
-        <p>No quote provided yet.</p>
-      {% endif %}
-    </div>
-    <div class="home-button-wrapper">
-      <a href="{% url 'index' %}" class="home-button">Home</a>
-    </div>
-
   </div>
 
+  <script src="{% static 'js/retro.js' %}"></script>
 </body>
 </html>
