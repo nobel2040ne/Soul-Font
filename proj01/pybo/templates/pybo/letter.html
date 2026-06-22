@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Write a Letter — SoulFont</title>
+  <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=mac-slider-2">
+  <style>
+    {% for ud in users %}{% if ud.ttf_file %}
+    {% if ud.ttf_file_light %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_light.url }}") format("truetype"); font-weight: 300; }{% endif %}
+    @font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file.url }}") format("truetype"); font-weight: 400; }
+    {% if ud.ttf_file_bold %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_bold.url }}") format("truetype"); font-weight: 700; }{% endif %}
+    {% endif %}{% endfor %}
+
+    /* ---------- font carousel (photo-app style filmstrip) ---------- */
+    .picker-label { font-weight: bold; margin: 8px 0 6px; }
+    .carousel { position: relative; }
+    .carousel-strip {
+      display: flex; gap: 14px; overflow-x: auto; scroll-behavior: smooth;
+      padding: 14px 48px; scroll-snap-type: x mandatory;
+      -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .carousel-strip::-webkit-scrollbar { display: none; }
+    .font-chip {
+      flex: 0 0 auto; width: 150px; scroll-snap-align: center; cursor: pointer;
+      border: 2px solid #000; background: #fff; padding: 12px 10px 10px;
+      text-align: center; transition: transform .25s ease, box-shadow .25s ease, opacity .25s ease;
+      opacity: .7; transform: scale(.9);
+    }
+    .font-chip .chip-sample {
+      height: 58px; display: flex; align-items: center; justify-content: center;
+      font-size: 30px; line-height: 1; overflow: hidden; word-break: keep-all;
+    }
+    .font-chip .chip-name {
+      margin-top: 8px; font-size: 12px; font-weight: bold; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+    }
+    .font-chip .chip-user { font-size: 11px; color: #555; }
+    .font-chip.sel { opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #000, 4px 4px 0 #000; }
+    .carousel-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+      min-width: 36px; height: 44px;
+    }
+    .carousel-arrow.left { left: 0; }
+    .carousel-arrow.right { right: 0; }
+
+    /* ---------- design / template + ratio pickers ---------- */
+    .designs { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; }
+    .design-btn {
+      width: 56px; height: 40px; border: 2px solid #000; cursor: pointer; padding: 0;
+      background-size: cover; background-position: center;
+    }
+    .design-btn.sel { box-shadow: 0 0 0 2px #000, 3px 3px 0 #000; }
+    .seg { display: inline-flex; flex-wrap: wrap; }
+    .seg .btn { min-width: 40px; }
+    .seg .btn.sel { font-weight: bold; box-shadow: 0 0 0 2px #000 inset; }
+
+    /* ---------- classic document window (SimpleText-style) ---------- */
+    .doc-window { max-width: 760px; margin: 6px auto 4px; }
+    .doc-window .title-bar .title { font-size: 13px; }
+    .editor-toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+      padding: 8px 12px; border-bottom: 2px solid #000; background: #dcdcdc;
+    }
+    .editor-toolbar label { font-size: 13px; }
+    .editor-toolbar .ctl-size { width: 150px; }
+    .editor-toolbar .tb-spacer { flex: 1; }
+    /* gray "desk" behind the page; the window scrolls, the page grows */
+    .doc-scroll {
+      background: #8f8f8f;
+      background-image: repeating-conic-gradient(#828282 0% 25%, #9c9c9c 0% 50%);
+      background-size: 4px 4px;
+      padding: 22px; max-height: 600px; overflow: auto; display: flex; justify-content: center;
+    }
+
+    /* ---------- the editable letter (PNG export target) ---------- */
+    #paper {
+      width: 520px; max-width: 100%; padding: 48px 44px;
+      box-sizing: border-box; color: #111;
+      display: flex; flex-direction: column; gap: 22px;
+      box-shadow: 0 2px 0 rgba(0,0,0,.35), 0 6px 14px rgba(0,0,0,.35);
+    }
+    #paper .letter-body {
+      flex: 1; outline: none; font-size: 32px; line-height: 1.55; word-break: keep-all;
+      white-space: pre-wrap;
+    }
+    #paper .letter-body:empty::before { content: attr(data-placeholder); color: #999; }
+    #paper .letter-sign {
+      outline: none; font-size: 28px; text-align: right; line-height: 1.4; min-height: 1em;
+    }
+    #paper .letter-sign:empty::before { content: attr(data-placeholder); color: #999; }
+
+    /* paper ratios (id-qualified so they win over the base #paper rule) */
+    #paper.ratio-a4p      { width: 520px; aspect-ratio: 210 / 297; }
+    #paper.ratio-a4l      { width: 700px; aspect-ratio: 297 / 210; }
+    #paper.ratio-square   { width: 540px; aspect-ratio: 1 / 1; }
+    #paper.ratio-letter   { width: 520px; aspect-ratio: 8.5 / 11; }
+    #paper.ratio-postcard { width: 620px; aspect-ratio: 148 / 100; }
+
+    /* paper designs (id-qualified -> beat the base #paper background/color) */
+    #paper.design-plain { background: #fff; }
+    #paper.design-lined {
+      background-color: #fff;
+      background-image: linear-gradient(#cfe0f0 1px, transparent 1px);
+      background-size: 100% 44px; background-position: 0 46px;
+    }
+    #paper.design-grid {
+      background-color: #fff;
+      background-image:
+        linear-gradient(#e6e6e6 1px, transparent 1px),
+        linear-gradient(90deg, #e6e6e6 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    #paper.design-vintage { background: #f6efde; color: #3a2f1b; border: 8px double #b89a5e; }
+    #paper.design-note    { background: #fff7b0; color: #2a2a14; }
+    #paper.design-blush {
+      background: #fdeef0; color: #5a2a35;
+      background-image: radial-gradient(#f6cdd5 1.4px, transparent 1.5px);
+      background-size: 22px 22px;
+    }
+
+    .empty-note { text-align: center; padding: 30px 10px; }
+
+    @media (max-width: 560px) {
+      #paper { padding: 30px 22px; }
+      #paper .letter-body { font-size: 26px; }
+      .carousel-strip { padding: 14px 44px; }
+      .doc-scroll { padding: 12px; }
+    }
+  </style>
+</head>
+<body class="desktop">
+  {% include 'pybo/_menubar.html' %}
+
+  <div class="app">
+    <div class="window app-window">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">Write a Letter</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+
+      <div class="window-pane">
+        <h2 class="page-title">Write a Letter</h2>
+        <p class="lede">Slide to pick a handwriting font, choose a paper and shape, write your note, and save it as a PNG.</p>
+
+        {% if users %}
+        <!-- 1 · font carousel -->
+        <div class="picker-label">1 · Choose a font</div>
+        <div class="carousel">
+          <button class="btn carousel-arrow left" type="button" id="cLeft">&lt;</button>
+          <div class="carousel-strip" id="strip">
+            {% for ud in users %}{% if ud.ttf_file %}
+            <div class="font-chip" data-font="SoulFont-{{ ud.id }}" data-id="{{ ud.id }}">
+              <div class="chip-sample" style="font-family:'SoulFont-{{ ud.id }}','Geneva',sans-serif">가나다</div>
+              <div class="chip-name">{{ ud.font_name }}</div>
+              <div class="chip-user">@ {{ ud.user.username }}</div>
+            </div>
+            {% endif %}{% endfor %}
+          </div>
+          <button class="btn carousel-arrow right" type="button" id="cRight">&gt;</button>
+        </div>
+
+        <!-- 2 · paper design + shape -->
+        <div class="picker-label">2 · Choose a paper</div>
+        <div class="designs" id="designs">
+          <button class="design-btn design-plain sel" type="button" data-design="design-plain" title="Plain"></button>
+          <button class="design-btn design-lined" type="button" data-design="design-lined" title="Lined"></button>
+          <button class="design-btn design-grid" type="button" data-design="design-grid" title="Grid"></button>
+          <button class="design-btn design-vintage" type="button" data-design="design-vintage" title="Vintage"></button>
+          <button class="design-btn design-note" type="button" data-design="design-note" title="Sticky note"></button>
+          <button class="design-btn design-blush" type="button" data-design="design-blush" title="Blush"></button>
+        </div>
+        <span class="seg" id="ratioSeg">
+          <button class="btn sel" type="button" data-ratio="ratio-a4p">A4 ↕</button>
+          <button class="btn" type="button" data-ratio="ratio-a4l">A4 ↔</button>
+          <button class="btn" type="button" data-ratio="ratio-square">Square</button>
+          <button class="btn" type="button" data-ratio="ratio-letter">Letter</button>
+          <button class="btn" type="button" data-ratio="ratio-postcard">Postcard</button>
+        </span>
+
+        <!-- 3 · write (classic document window) -->
+        <div class="picker-label">3 · Write your letter</div>
+        <div class="window doc-window">
+          <div class="title-bar">
+            <button aria-label="Close" class="close"></button>
+            <h1 class="title">Untitled — SoulFont</h1>
+            <button aria-label="Resize" class="resize"></button>
+          </div>
+          <div class="separator"></div>
+          <div class="editor-toolbar">
+            <label for="bodySize">Size</label>
+            <input class="ctl-size" id="bodySize" type="range" min="18" max="56" value="32">
+            <label for="bodyWeight">Weight</label>
+            <input class="ctl-size" id="bodyWeight" type="range" min="300" max="700" step="100" value="400">
+            <span class="seg" id="alignSeg">
+              <button class="btn sel" type="button" data-align="left">Left</button>
+              <button class="btn" type="button" data-align="center">Center</button>
+              <button class="btn" type="button" data-align="right">Right</button>
+            </span>
+            <span class="tb-spacer"></span>
+            <button class="btn" type="button" id="clearBtn">Clear</button>
+          </div>
+          <div class="doc-scroll">
+            <div id="paper" class="design-plain ratio-a4p">
+              <div class="letter-body" id="letterBody" contenteditable="true" spellcheck="false"
+                   data-placeholder="Dear friend, …"></div>
+              <div class="letter-sign" id="letterSign" contenteditable="true" spellcheck="false"
+                   data-placeholder="— from me"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="right-row">
+          <button class="btn default" type="button" id="exportBtn">Save as PNG</button>
+        </div>
+        {% else %}
+        <div class="empty-note">
+          <p>No fonts have been created yet.</p>
+          <button class="btn default" onclick="location.href='{% url 'create_font' %}'">Create My Font</button>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/retro.js' %}"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script>
+    (function () {
+      var strip = document.getElementById('strip');
+      if (!strip) return;
+      var chips = Array.prototype.slice.call(strip.querySelectorAll('.font-chip'));
+      var paper = document.getElementById('paper');
+      var body = document.getElementById('letterBody');
+      var sign = document.getElementById('letterSign');
+      if (!chips.length) return;
+
+      // swap one class within a prefix group, leaving the other groups intact
+      function setGroupClass(el, prefix, cls) {
+        Array.prototype.slice.call(el.classList).forEach(function (c) {
+          if (c.indexOf(prefix) === 0) el.classList.remove(c);
+        });
+        el.classList.add(cls);
+      }
+
+      // ---- font selection ----
+      function selectChip(chip) {
+        chips.forEach(function (c) { c.classList.toggle('sel', c === chip); });
+        var fam = chip.getAttribute('data-font');
+        body.style.fontFamily = "'" + fam + "', 'Geneva', sans-serif";
+        sign.style.fontFamily = "'" + fam + "', 'Geneva', sans-serif";
+        chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () { selectChip(chip); });
+      });
+
+      // preselect from ?font=ID, else first chip
+      var params = new URLSearchParams(window.location.search);
+      var wanted = params.get('font');
+      var initial = chips[0];
+      if (wanted) {
+        var match = chips.filter(function (c) { return c.getAttribute('data-id') === wanted; })[0];
+        if (match) initial = match;
+      }
+      selectChip(initial);
+      requestAnimationFrame(function () {
+        initial.scrollIntoView({ inline: 'center', block: 'nearest' });
+      });
+
+      // ---- arrows ----
+      document.getElementById('cLeft').addEventListener('click', function () {
+        strip.scrollBy({ left: -180, behavior: 'smooth' });
+      });
+      document.getElementById('cRight').addEventListener('click', function () {
+        strip.scrollBy({ left: 180, behavior: 'smooth' });
+      });
+
+      // ---- paper designs ----
+      var designBtns = Array.prototype.slice.call(document.querySelectorAll('.design-btn'));
+      designBtns.forEach(function (b) {
+        b.addEventListener('click', function () {
+          designBtns.forEach(function (x) { x.classList.remove('sel'); });
+          b.classList.add('sel');
+          setGroupClass(paper, 'design-', b.getAttribute('data-design'));
+        });
+      });
+
+      // ---- paper ratio ----
+      var ratioBtns = Array.prototype.slice.call(document.querySelectorAll('#ratioSeg .btn'));
+      ratioBtns.forEach(function (b) {
+        b.addEventListener('click', function () {
+          ratioBtns.forEach(function (x) { x.classList.remove('sel'); });
+          b.classList.add('sel');
+          setGroupClass(paper, 'ratio-', b.getAttribute('data-ratio'));
+        });
+      });
+
+      // ---- text size ----
+      var size = document.getElementById('bodySize');
+      size.addEventListener('input', function () {
+        body.style.fontSize = size.value + 'px';
+        sign.style.fontSize = Math.round(size.value * 0.85) + 'px';
+      });
+
+      // ---- weight (Light 300 <-> Regular 400 <-> Bold 700; uses generated faces) ----
+      var weight = document.getElementById('bodyWeight');
+      weight.addEventListener('input', function () {
+        body.style.fontWeight = weight.value;
+        sign.style.fontWeight = weight.value;
+      });
+
+      // ---- alignment ----
+      var alignBtns = Array.prototype.slice.call(document.querySelectorAll('#alignSeg .btn'));
+      alignBtns.forEach(function (b) {
+        b.addEventListener('click', function () {
+          alignBtns.forEach(function (x) { x.classList.remove('sel'); });
+          b.classList.add('sel');
+          body.style.textAlign = b.getAttribute('data-align');
+        });
+      });
+
+      // ---- clear ----
+      document.getElementById('clearBtn').addEventListener('click', function () {
+        body.textContent = '';
+        sign.textContent = '';
+        body.focus();
+      });
+
+      // ---- export PNG ----
+      var exportBtn = document.getElementById('exportBtn');
+      exportBtn.addEventListener('click', function () {
+        if (typeof html2canvas === 'undefined') {
+          alert('Could not load the image library. Check your connection and try again.');
+          return;
+        }
+        var label = exportBtn.textContent;
+        exportBtn.textContent = 'Saving…';
+        exportBtn.disabled = true;
+
+        var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+        ready.then(function () {
+          var bg = window.getComputedStyle(paper).backgroundColor;
+          return html2canvas(paper, { scale: 2, backgroundColor: bg, useCORS: true });
+        }).then(function (canvas) {
+          var link = document.createElement('a');
+          link.download = 'soulfont-letter.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        }).catch(function (err) {
+          console.error(err);
+          alert('Sorry, the PNG could not be created.');
+        }).then(function () {
+          exportBtn.textContent = label;
+          exportBtn.disabled = false;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

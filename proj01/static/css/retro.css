@@ -1,0 +1,348 @@
+/* ============================================================
+   SoulFont — Classic Mac OS retro skin (sits on top of system.css)
+   ============================================================ */
+
+:root { --mac-line: #000; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
+body.desktop [hidden] { display: none !important; }
+
+body.desktop {
+  min-height: 100vh;
+  /* classic 50% gray desktop dither */
+  background-color: #b9b9b9;
+  background-image: repeating-conic-gradient(#a6a6a6 0% 25%, #cfcfcf 0% 50%);
+  background-size: 4px 4px;
+  padding-top: 26px;            /* clear the menu bar */
+  box-sizing: border-box;
+}
+
+/* ---------- classic menu bar ---------- */
+.menu-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 22px; z-index: 1000;
+  display: flex; align-items: center; gap: 18px;
+  padding: 0 12px;
+  background: #fff;
+  border-bottom: 2px solid var(--mac-line);
+  font-size: 15px;
+}
+.menu-bar .apple { font-weight: bold; }
+.menu-bar .brand { font-weight: bold; margin-right: 6px; }
+.menu-bar a, .menu-bar .mb-item {
+  color: #000; text-decoration: none; cursor: pointer; line-height: 22px;
+  padding: 0 6px;
+}
+.menu-bar a:hover, .menu-bar .mb-item:hover { background: #000; color: #fff; }
+.menu-bar .spacer { flex: 1; }
+
+/* ---------- centered app window ---------- */
+.app { width: 100%; display: flex; justify-content: center; padding: 30px 18px 58px; }
+.app-window { width: 100%; max-width: 980px; min-width: 0 !important; }
+.app-window.narrow { max-width: 620px; }
+.home-window { max-width: 1240px; }
+.app-window > .window-pane { padding: 24px 32px 28px; }
+.window-pane h2.page-title { margin: 2px 0 14px; font-size: 24px; }
+.window-pane p.lede { margin: 0 0 18px; line-height: 1.5; }
+.center-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.right-row { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; }
+.stack { display: flex; flex-direction: column; gap: 4px; }
+.muted { color: #555; }
+.divider { border: none; border-top: 1px solid #000; opacity: .25; margin: 16px 0; }
+
+/* default (highlighted) button — classic thick rounded ring */
+.btn.default { font-weight: bold; box-shadow: 0 0 0 2px #000; border-radius: 8px; }
+.btn.block { width: 100%; }
+
+/* form helpers */
+.field-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.field-row label { min-width: 96px; }
+.field-col { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.field-col label { font-weight: bold; }
+input.w100, textarea.w100, select.w100 { width: 100%; box-sizing: border-box; }
+textarea.w100 { min-height: 90px; resize: vertical; }
+.error-box { border: 2px solid #000; padding: 8px 10px; margin-bottom: 14px; background: #fff; }
+.check-row { display: flex; align-items: center; gap: 8px; text-align: left; }
+
+/* classic Macintosh range slider */
+body.desktop input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  margin: 4px 0;
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  cursor: pointer;
+}
+body.desktop input[type="range"]:focus { outline: none; }
+body.desktop input[type="range"]::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  height: 8px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 13px, #000 13px 15px),
+    #fff;
+  box-shadow: inset 1px 1px 0 #777, inset -1px -1px 0 #fff;
+}
+body.desktop input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 24px;
+  margin-top: -10px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background:
+    linear-gradient(#000, #000) 50% 4px / 8px 2px no-repeat,
+    linear-gradient(#000, #000) 50% 9px / 8px 2px no-repeat,
+    linear-gradient(#000, #000) 50% 14px / 8px 2px no-repeat,
+    #fff;
+  box-shadow: inset 1px 1px 0 #fff, inset -2px -2px 0 #8a8a8a, 1px 1px 0 #000;
+}
+body.desktop input[type="range"]:focus::-webkit-slider-thumb {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+body.desktop input[type="range"]::-moz-range-track {
+  height: 8px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 13px, #000 13px 15px),
+    #fff;
+  box-shadow: inset 1px 1px 0 #777, inset -1px -1px 0 #fff;
+}
+body.desktop input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 24px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background:
+    linear-gradient(#000, #000) 50% 4px / 8px 2px no-repeat,
+    linear-gradient(#000, #000) 50% 9px / 8px 2px no-repeat,
+    linear-gradient(#000, #000) 50% 14px / 8px 2px no-repeat,
+    #fff;
+  box-shadow: inset 1px 1px 0 #fff, inset -2px -2px 0 #8a8a8a, 1px 1px 0 #000;
+}
+body.desktop input[type="range"]:focus::-moz-range-thumb {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+body.desktop input[type="range"]:disabled {
+  cursor: default;
+  opacity: .55;
+}
+.file-picker {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+}
+.file-picker-input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+.file-picker-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 34px; padding: 6px 12px; border: 2px solid #000; background: #fff;
+  color: #000; cursor: pointer; font-weight: bold; white-space: nowrap;
+  box-shadow: 2px 2px 0 #000;
+}
+.file-picker-button:active { transform: translate(2px, 2px); box-shadow: none; }
+.file-picker-input:focus + .file-picker-button { outline: 2px solid #000; outline-offset: 2px; }
+.file-picker-icon {
+  position: relative; width: 18px; height: 22px; flex: 0 0 18px;
+  border: 2px solid #000; background: #fff;
+}
+.file-picker-icon::before {
+  content: ""; position: absolute; right: -2px; top: -2px;
+  width: 8px; height: 8px; background: #b9b9b9;
+  border-left: 2px solid #000; border-bottom: 2px solid #000;
+}
+.file-picker-name {
+  min-width: 0; flex: 1; text-align: left; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; color: #555;
+}
+
+/* ---------- profile upload/display ---------- */
+.profile-editor,
+.profile-head,
+.profile-page-head {
+  display: flex; align-items: center; gap: 14px;
+}
+.profile-editor { border: 1px solid #000; padding: 16px; margin: 2px 0 18px; }
+.profile-editor .field-col { flex: 1; margin-bottom: 0; }
+.profile-head { margin-bottom: 12px; }
+.profile-page-head { justify-content: flex-start; margin: 0 0 16px; }
+.profile-avatar {
+  width: 72px; height: 72px; flex: 0 0 72px;
+  border: 2px solid #000; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 28px; object-fit: cover;
+}
+.profile-avatar.small {
+  width: 44px; height: 44px; flex-basis: 44px; font-size: 18px;
+}
+.profile-copy { text-align: left; }
+.profile-copy .profile-name { font-weight: bold; color: #000; text-decoration: none; }
+.profile-copy .profile-name:hover { text-decoration: underline; }
+.home-window .profile-copy .profile-name {
+  font-size: 14px;
+  line-height: 1.1;
+}
+.home-window .profile-copy .muted {
+  font-size: 12px;
+  line-height: 1.15;
+}
+.profile-page-head .profile-copy {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+}
+.profile-page-head .profile-name { line-height: 1.15; }
+.profile-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.profile-page-head .btn { margin: 0; align-self: flex-start; }
+
+/* ---------- view switch (Coverflow / Directory) ---------- */
+.view-switch { display: flex; gap: 8px; justify-content: center; margin: 4px 0 14px; }
+#gallery { position: relative; }
+#gallery > .soul-card[data-card] { display: none; }
+#cover-arrows {
+  position: absolute; inset: 0; pointer-events: none; z-index: 70;
+}
+
+/* ---------- card = mini Mac window ---------- */
+.soul-card { width: 270px; }
+.home-window .soul-card {
+  width: 400px;
+  height: 400px;
+}
+.home-window .soul-card .title-bar {
+  position: relative;
+}
+.home-window .soul-card .title-bar .title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: calc(100% - 76px);
+  margin: 0;
+  padding: 0 6px;
+  line-height: 1;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+.soul-card .title-bar .title { font-size: 13px; }
+.soul-card .window-pane { display: flex; flex-direction: column; min-height: 190px; padding: 16px 20px 18px; }
+.home-window .soul-card .window-pane {
+  min-height: 0;
+  height: calc(400px - 29px);
+  padding: 22px 26px 22px;
+}
+.soul-quote {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-size: 1.7rem; line-height: 1.4; padding: 8px 4px;
+  word-break: keep-all; min-height: 100px;
+}
+.home-window .soul-quote { font-size: 2.35rem; min-height: 0; }
+.font-preview { --korean-preview-scale: .68; }
+body.desktop .font-preview.has-korean { line-height: 1.56; }
+.soul-card .card-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border-top: 1px solid #000; padding-top: 12px; margin-top: 10px;
+}
+.soul-card .card-foot .fname { font-size: 12px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- COVERFLOW ---------- */
+.coverflow {
+  position: relative; height: 560px; perspective: 1400px;
+  display: flex; align-items: center; justify-content: center; margin: 0 auto;
+  overflow: hidden;   /* clip the 3D cards so they never trigger page scroll */
+  max-width: 100%;
+}
+.coverflow .soul-card {
+  position: absolute; top: 50%; left: 50%;
+  transition: transform .45s cubic-bezier(.25,.8,.25,1), opacity .45s ease;
+  transform-style: preserve-3d; will-change: transform;
+}
+.cover-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  z-index: 80; min-width: 34px; pointer-events: auto;
+}
+.cover-arrow.left { left: 0; }
+.cover-arrow.right { right: 0; }
+
+/* ---------- DIRECTORY ---------- */
+.directory-view {
+  display: flex; flex-direction: column; gap: 14px; margin: 22px 0 4px;
+}
+.directory-item {
+  display: flex; flex-direction: column; gap: 12px;
+  border: 1px solid #000; background: #fff; padding: 18px 20px 16px;
+}
+.directory-user { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.home-window .directory-user .profile-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 44px;
+}
+.directory-user.compact { gap: 10px; }
+.directory-user.compact .profile-avatar.small {
+  width: 36px; height: 36px; flex-basis: 36px; font-size: 15px;
+}
+.directory-user.compact .profile-copy { height: 36px; }
+.directory-user.compact .profile-copy .profile-name { font-size: 13px; }
+.directory-user.compact .profile-copy .muted { font-size: 11px; }
+.directory-quote {
+  min-width: 0; text-align: center; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 2rem; line-height: 1.35; padding: 8px 12px 10px;
+}
+body.desktop .directory-quote.font-preview.has-korean { line-height: 1.52; }
+.directory-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  border-top: 1px solid #000; padding-top: 12px;
+}
+.directory-footer .profile-copy .profile-name { font-size: 13px; }
+.directory-footer .profile-copy .muted { font-size: 11px; }
+.directory-actions {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+}
+
+.empty-note { text-align: center; padding: 30px 10px; }
+.site-foot { text-align: center; padding: 16px; font-size: 13px; }
+
+@media (max-width: 560px) {
+  .menu-bar { gap: 8px; font-size: 13px; }
+  .app { padding: 22px 12px 44px; }
+  body.desktop .window.app-window,
+  body.desktop .window.app-window.narrow {
+    width: calc(100vw - 56px) !important;
+    max-width: calc(100vw - 56px) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .app-window > .window-pane { padding: 20px 18px 24px; }
+  .home-window .soul-card { width: 270px; height: 270px; }
+  .home-window .soul-card .window-pane { height: calc(270px - 29px); min-height: 0; padding: 16px 20px 18px; }
+  .home-window .soul-quote { font-size: 1.7rem; min-height: 100px; }
+  .coverflow { height: 410px; }
+  .field-row { flex-direction: column; align-items: stretch; }
+  .field-row label { min-width: 0; }
+  input.w100, textarea.w100, select.w100 { min-width: 0; }
+  .right-row { justify-content: stretch; gap: 8px; }
+  .right-row .btn,
+  .right-row button { flex: 1 1 0; min-width: 0; }
+  .directory-item { gap: 10px; padding: 14px; }
+  .directory-quote { font-size: 1.45rem; white-space: normal; }
+  .directory-footer { align-items: stretch; flex-direction: column; }
+  .directory-actions { justify-content: stretch; }
+  .directory-actions .btn { flex: 1 1 0; }
+  .file-picker { align-items: stretch; flex-direction: column; }
+  .file-picker-button { width: 100%; }
+  .profile-editor,
+  .profile-page-head { flex-direction: column; align-items: stretch; }
+  .profile-page-head { align-items: flex-start; }
+  .profile-page-head .profile-copy { align-items: flex-start; text-align: left; }
+  .profile-page-head .btn { align-self: flex-start; }
+}

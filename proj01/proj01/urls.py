@@ -29,6 +29,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('create/', views.create_font, name='create_font'),
+    path('letter/', views.letter, name='letter'),
     path('learning/', views.learning, name='learning'),
     path('result/', views.result, name='result'),
 ]

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Font Editor — SoulFont</title>
+  <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=editor-unified-1">
+  <style>
+    {% if ttf_file %}
+    @font-face { font-family: "SoulFontEdit-{{ profile_user.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); font-weight: 400; }
+    {% endif %}
+    {% if ttf_file_light %}
+    @font-face { font-family: "SoulFontEdit-{{ profile_user.id }}"; src: url("{{ ttf_file_light.url }}") format("truetype"); font-weight: 300; }
+    {% endif %}
+    {% if ttf_file_bold %}
+    @font-face { font-family: "SoulFontEdit-{{ profile_user.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
+    {% endif %}
+    .editor-grid { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+    .panel { border: 1px solid #000; padding: 14px; }
+    .control { margin-bottom: 14px; }
+    .control label { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; margin-bottom: 5px; }
+    .control input[type="range"] { width: 100%; }
+    .preview-stage {
+      border: 1px solid #000; background: #fff; min-height: 300px; padding: 26px;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+    }
+    .preview-text {
+      font-family: "SoulFontEdit-{{ profile_user.id }}", "Geneva", sans-serif;
+      word-break: keep-all; white-space: pre-wrap;
+    }
+    .download-box { border: 1px solid #000; padding: 10px; margin-bottom: 12px; }
+    @media (max-width: 760px) { .editor-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="desktop">
+  {% include 'pybo/_menubar.html' %}
+
+  <div class="app">
+    <div class="window app-window">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">Font Editor</h1>
+      </div>
+      <div class="separator"></div>
+
+      <div class="window-pane">
+        <h2 class="page-title">{{ font_name }}</h2>
+
+        {% if message %}<div class="download-box">{{ message }} {% if download_url %}<a class="btn default" href="{{ download_url }}" download>Download</a>{% endif %}</div>{% endif %}
+        {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+
+        <div class="editor-grid">
+          <form class="panel" method="post">
+            {% csrf_token %}
+
+            <div class="control">
+              <label for="sampleText"><span>Preview text</span></label>
+              <textarea class="w100" id="sampleText">안녕하세요
+SoulFont ABC 123 "'</textarea>
+            </div>
+
+            <div class="control">
+              <label for="strokeAdjust"><span>Stroke</span><span id="strokeAdjustVal">0</span></label>
+              <input id="strokeAdjust" name="stroke_adjust" type="range" min="-5" max="5" value="0">
+            </div>
+
+            <div class="control">
+              <label for="letterSpacingUnits"><span>Letter spacing</span><span id="letterSpacingUnitsVal">0</span></label>
+              <input id="letterSpacingUnits" name="letter_spacing_units" type="range" min="-120" max="360" step="10" value="0">
+            </div>
+
+            <div class="control">
+              <label for="glyphScale"><span>Glyph size</span><span id="glyphScaleVal">100%</span></label>
+              <input id="glyphScale" name="glyph_scale" type="range" min="0.65" max="1.35" step="0.01" value="1.00">
+            </div>
+
+            <div class="right-row">
+              <button class="btn default" type="submit">Export Edited TTF</button>
+            </div>
+          </form>
+
+          <div class="preview-stage">
+            <div class="preview-text" id="previewText">안녕하세요
+SoulFont ABC 123 "'</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/retro.js' %}"></script>
+  <script>
+    (function () {
+      var sample = document.getElementById('sampleText');
+      var preview = document.getElementById('previewText');
+      var stroke = document.getElementById('strokeAdjust');
+      var exportSpacing = document.getElementById('letterSpacingUnits');
+      var scale = document.getElementById('glyphScale');
+
+      function setText(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = value;
+      }
+
+      function render() {
+        var strokeValue = Number(stroke.value);
+        var spacingUnits = Number(exportSpacing.value);
+        var glyphScale = Number(scale.value);
+        var previewWeight = strokeValue < 0 ? '300' : (strokeValue > 0 ? '700' : '400');
+        var previewSpacing = spacingUnits / 40;
+        var previewSize = Math.round(56 * glyphScale);
+        var shadowAmount = Math.max(0, strokeValue) * 0.18;
+
+        preview.textContent = sample.value || 'Preview';
+        preview.style.fontSize = previewSize + 'px';
+        preview.style.letterSpacing = previewSpacing.toFixed(1) + 'px';
+        preview.style.lineHeight = '1.25';
+        preview.style.fontWeight = previewWeight;
+        preview.style.textShadow = shadowAmount > 0
+          ? shadowAmount.toFixed(2) + 'px 0 0 currentColor, -' + shadowAmount.toFixed(2) + 'px 0 0 currentColor'
+          : 'none';
+        preview.style.opacity = strokeValue < 0 ? String(1 - Math.abs(strokeValue) * 0.06) : '1';
+        setText('strokeAdjustVal', stroke.value);
+        setText('letterSpacingUnitsVal', exportSpacing.value);
+        setText('glyphScaleVal', Math.round(glyphScale * 100) + '%');
+      }
+
+      [sample, stroke, exportSpacing, scale].forEach(function (el) {
+        if (el) el.addEventListener('input', render);
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

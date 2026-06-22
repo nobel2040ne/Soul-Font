@@ -6,10 +6,12 @@
   <title>SoulFont — Feel Your Font</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
-  <link rel="stylesheet" href="{% static 'css/retro.css' %}">
+  <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=directory-visibility-2">
   <style>
     {% for ud in users %}{% if ud.ttf_file %}
-    @font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file.url }}") format("truetype"); }
+    {% if ud.ttf_file_light %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_light.url }}") format("truetype"); font-weight: 300; }{% endif %}
+    @font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file.url }}") format("truetype"); font-weight: 400; }
+    {% if ud.ttf_file_bold %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_bold.url }}") format("truetype"); font-weight: 700; }{% endif %}
     .quote-{{ ud.id }} { font-family: "SoulFont-{{ ud.id }}", "Geneva", sans-serif; }
     {% endif %}{% endfor %}
   </style>
@@ -42,7 +44,7 @@
           </div>
 
           <div id="coverflow" class="coverflow"></div>
-          <div id="directory" class="directory-view" style="display:none">
+          <div id="directory" class="directory-view" hidden>
             {% for ud in users %}{% if ud.ttf_file %}
             <div class="directory-item">
               <div class="directory-quote font-preview quote-{{ ud.id }}">{{ ud.quote|default:"…" }}</div>
@@ -110,6 +112,6 @@
 
   <div class="site-foot">{{ users|length }} souls connected by SoulFont</div>
 
-  <script src="{% static 'js/retro.js' %}"></script>
+  <script src="{% static 'js/retro.js' %}?v=directory-visibility-1"></script>
 </body>
 </html>

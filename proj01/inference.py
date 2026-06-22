@@ -18,11 +18,21 @@ from datasets.nonpaired_dataset import EncodeDataset, DecodeDataset
 from datasets.style_image_dataset import StyleImageDataset
 
 
-def get_device():
-    """Pick the best available device so inference runs on any machine."""
-    if torch.cuda.is_available():
+def get_device(requested=None):
+    """Pick inference device.
+
+    The HAI/DMFont web path runs on CPU. Keep CPU as the default here too because
+    MPS/CUDA autocast can write valid-looking files with corrupted glyph content.
+    Set SOUL_FONT_DEVICE=cuda or SOUL_FONT_DEVICE=mps only for explicit testing.
+    """
+    requested = (requested or os.environ.get("SOUL_FONT_DEVICE", "cpu")).lower()
+    if requested == "cuda" and torch.cuda.is_available():
         return torch.device("cuda")
-    if getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+    if (
+        requested == "mps" and
+        getattr(torch.backends, "mps", None) is not None and
+        torch.backends.mps.is_available()
+    ):
         return torch.device("mps")
     return torch.device("cpu")
 
@@ -176,9 +186,9 @@ def save_single_char_tensor_as_png(tensor, path):
     Image.fromarray(img, mode='L').save(path)
 
 
-def main(config, checkpoint, save_dir):
+def main(config, checkpoint, save_dir, device_name=None, use_amp=None):
     os.makedirs(save_dir, exist_ok=True)
-    device = get_device()
+    device = get_device(device_name)
     # Use all CPU cores for the ops that still fall back to CPU.
     try:
         torch.set_num_threads(os.cpu_count() or 1)
@@ -193,7 +203,7 @@ def main(config, checkpoint, save_dir):
 
     encode_loader = get_styleimg_encode_loader(
         cfg['style_imgs'], cfg['style_chars'], cfg['language'],
-        transform=get_transform(), style_id=0,
+        transform=get_transform(), style_id=0, num_workers=0,
     )
 
     # The model only knows Hangul syllables; non-Korean targets (ENG/special) are
@@ -201,12 +211,16 @@ def main(config, checkpoint, save_dir):
     valid_target_chars = list(dict.fromkeys(
         c for c in cfg['target_chars'] if re.match(r'[가-힣]', c)
     ))
-    decode_loader = get_val_decode_loader(valid_target_chars, cfg['language'], style_id=0)
+    decode_loader = get_val_decode_loader(
+        valid_target_chars, cfg['language'], style_id=0, num_workers=0,
+    )
 
+    if use_amp is None:
+        use_amp = os.environ.get("SOUL_FONT_USE_AMP") == "1"
     with _INFER_LOCK, torch.inference_mode():
         try:
-            outs = infer_2stage(gen, encode_loader, decode_loader, device, use_amp=True)
-        except Exception as e:
+            outs = infer_2stage(gen, encode_loader, decode_loader, device, use_amp=use_amp)
+        except RuntimeError as e:
             # fp16 can be flaky on MPS for some ops — retry in full precision.
             print(f"[inference] fp16 failed ({e}); retrying in fp32")
             outs = infer_2stage(gen, encode_loader, decode_loader, device, use_amp=False)

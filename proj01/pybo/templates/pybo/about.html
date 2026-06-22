@@ -11,10 +11,14 @@
     .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
     @media (max-width: 560px) { .about-grid { grid-template-columns: 1fr; } }
     .person { border: 1px solid #000; padding: 12px; }
-    .person h3 { margin: 0 0 2px; }
-    .person .role { font-size: 13px; }
-    .steps { margin: 6px 0 0; padding-left: 20px; line-height: 1.6; }
-    .tech { font-size: 13px; line-height: 1.6; }
+    /* keep h2 section titles in the classic heading font; everything else uses the
+       same Inconsolata body stack (from .window-pane) at one consistent size. */
+    .person h3 { font-family: inherit; font-size: 15px; font-weight: bold; margin: 0 0 4px; }
+    .person .role,
+    .steps,
+    .tech,
+    p.muted { font-family: inherit; font-size: 14px; line-height: 1.6; }
+    .steps { margin: 6px 0 0; padding-left: 20px; }
   </style>
 </head>
 <body class="desktop">
@@ -47,19 +51,9 @@
         <hr class="divider">
 
         <h2 class="page-title">The people</h2>
-        <div class="about-grid">
-          <div class="person">
-            <h3>nobel</h3>
-            <div class="role">Model &amp; Inference — training, the generation pipeline, and font packaging.</div>
-          </div>
-          <div class="person">
-            <h3>lukple</h3>
-            <div class="role">Web &amp; Design — the application, interface, and overall experience.</div>
-          </div>
-        </div>
-        <p class="muted" style="margin-top:12px;">
-          A student AI project from SASA (Korea Science Academy of KAIST). Built for learning,
-          for personal and non-commercial use.
+        <p class="tech" style="margin-top:12px;">
+          A project from SASA / Artificial Intelligence Project. Built for learning, for personal and non-commercial use.
+          Jin Myung Lee, Ji Hoo Lee
         </p>
 
         <hr class="divider">

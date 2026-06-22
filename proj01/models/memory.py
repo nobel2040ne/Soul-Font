@@ -70,15 +70,13 @@ class DynamicMemory(nn.Module):
             char_feats = []
             for comp_addr in comp_addrs_per_char:
                 comp_feat = self.read_point(style_id, comp_addr, reduction)
-                if comp_feat is None:
-                    # 컴포넌트가 없으면 zero vector로 대체
-                    comp_feat = torch.zeros_like(next(iter(self.memory.values()))[0][0])
                 char_feats.append(comp_feat)
-    
-            char_feats = torch.stack(char_feats)  # 반드시 [3, C, H, W]
+
+            char_feats = torch.stack(char_feats)  # [3, mem_shape]
             out.append(char_feats)
-    
-        return torch.stack(out)  # [B, 3, C, H, W]
+
+        out = torch.stack(out)  # [B, 3, mem_shape]
+        return out
 
     def write_point(self, style_id, comp_addr, data):
         self.memory.setdefault(style_id.item(), {}) \
@@ -86,12 +84,8 @@ class DynamicMemory(nn.Module):
                    .append(data)
 
     def read_point(self, style_id, comp_addr, reduction='mean'):
-        """ Point read with KeyError protection """
-        try:
-            comp_feats = self.memory[style_id.item()][comp_addr.item()]
-        except KeyError:
-            print(f"[WARNING] Missing style_id={style_id.item()}, comp_addr={comp_addr.item()} — skipping this component.")
-            return None
+        """ Point read """
+        comp_feats = self.memory[style_id.item()][comp_addr.item()]
         return self.reduce_features(comp_feats, reduction)
 
     def reduce_features(self, feats, reduction='mean'):

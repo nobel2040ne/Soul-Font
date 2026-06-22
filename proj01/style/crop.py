@@ -12,14 +12,19 @@ so it degrades gracefully instead of crashing.
 """
 import os
 import argparse
+import sys
 import numpy as np
 from PIL import Image, ImageChops, ImageOps
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
+from char_layout import TEMPLATE_COLS, TEMPLATE_ROWS  # noqa: E402
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--src_dir", required=True)
 parser.add_argument("--dst_dir", required=True)
-parser.add_argument("--rows", type=int, default=4)
-parser.add_argument("--cols", type=int, default=7)
+parser.add_argument("--rows", type=int, default=TEMPLATE_ROWS)
+parser.add_argument("--cols", type=int, default=TEMPLATE_COLS)
 args = parser.parse_args()
 
 ROWS, COLS = args.rows, args.cols

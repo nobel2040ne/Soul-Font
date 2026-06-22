@@ -6,17 +6,40 @@
   <title>{{ profile_user.username }} — SoulFont</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
-  <link rel="stylesheet" href="{% static 'css/retro.css' %}">
+  <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=profile-actions-1">
   <style>
     .preview { border: 1px solid #000; padding: 34px 18px; text-align: center; margin: 4px 0 16px;
                min-height: 120px; display: flex; align-items: center; justify-content: center; }
     .preview .q { font-size: 2.2rem; line-height: 1.4; word-break: keep-all; }
+    {% if ttf_file_light %}
+    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file_light.url }}") format("truetype"); font-weight: 300; }
+    {% endif %}
     {% if ttf_file %}
-    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); }
+    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); font-weight: 400; }
     .preview .q { font-family: "SoulFont-{{ profile_user.id }}", "Geneva", sans-serif; }
+    {% endif %}
+    {% if ttf_file_bold %}
+    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
     {% endif %}
     .meta-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #ccc; font-size: 14px; }
     .meta-row .k { font-weight: bold; }
+
+    /* try-it-out box */
+    .tryout { border: 1px solid #000; padding: 14px 16px 16px; margin: 18px 0; }
+    .tryout h3 { margin: 0 0 4px; font-size: 16px; }
+    .tryout .hint { margin: 0 0 10px; font-size: 12px; color: #555; }
+    .tryout textarea.w100 { min-height: 64px; }
+    .tryout .tryout-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .tryout .tryout-row label { font-size: 13px; }
+    .tryout .tryout-size { flex: 1; min-width: 140px; }
+    .tryout .tryout-stage {
+      border: 1px solid #000; margin-top: 12px; padding: 22px 16px; min-height: 90px;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      background: #fff;
+    }
+    {% if ttf_file %}
+    .tryout .tryout-stage .ts { font-family: "SoulFont-{{ profile_user.id }}", "Geneva", sans-serif; line-height: 1.4; word-break: keep-all; }
+    {% endif %}
   </style>
 </head>
 <body class="desktop">
@@ -41,7 +64,10 @@
           <div class="profile-copy">
             <div class="profile-name">@ {{ profile_user.username }}</div>
             {% if request.user.id == profile_user.id %}
-              <a class="btn" href="{% url 'result' %}">Edit Profile</a>
+              <div class="profile-actions">
+                <a class="btn" href="{% url 'result' %}">Edit Profile</a>
+                <a class="btn" href="{% url 'font_editor' profile_user.id %}">Font Editor</a>
+              </div>
             {% endif %}
           </div>
         </div>
@@ -49,6 +75,22 @@
         <div class="preview">
           {% if quote %}<div class="q font-preview">{{ quote }}</div>{% else %}<div class="muted">No quote yet.</div>{% endif %}
         </div>
+
+        {% if ttf_file %}
+        <div class="tryout">
+          <h3>Try this font</h3>
+          <p class="hint">Type anything below to see it in {{ font_name }}.</p>
+          <textarea class="w100" id="tryInput" placeholder="Type something…">안녕하세요</textarea>
+          <div class="tryout-row">
+            <label for="trySize">Size</label>
+            <input class="tryout-size" id="trySize" type="range" min="20" max="96" value="48">
+            <label for="tryWeight">Weight</label>
+            <input class="tryout-size" id="tryWeight" type="range" min="300" max="700" step="100" value="400">
+            <a class="btn" href="{% url 'letter' %}?font={{ user_data.id }}">Write a letter →</a>
+          </div>
+          <div class="tryout-stage"><div class="ts" id="tryStage" style="font-size:48px">안녕하세요</div></div>
+        </div>
+        {% endif %}
 
         <div class="meta">
           {% if user_data.author %}<div class="meta-row"><span class="k">Author</span><span>{{ user_data.author }}</span></div>{% endif %}
@@ -58,7 +100,9 @@
         </div>
 
         <div class="right-row">
-          {% if ttf_file %}<a class="btn default" href="{{ ttf_file.url }}" download>Download Font</a>{% endif %}
+          {% if ttf_file_light %}<a class="btn default" href="{{ ttf_file_light.url }}" download>Download Light</a>{% endif %}
+          {% if ttf_file %}<a class="btn default" href="{{ ttf_file.url }}" download>Download Regular</a>{% endif %}
+          {% if ttf_file_bold %}<a class="btn default" href="{{ ttf_file_bold.url }}" download>Download Bold</a>{% endif %}
           <a class="btn" href="{% url 'index' %}">Home</a>
         </div>
       </div>
@@ -66,5 +110,25 @@
   </div>
 
   <script src="{% static 'js/retro.js' %}"></script>
+  <script>
+    (function () {
+      var input = document.getElementById('tryInput');
+      var stage = document.getElementById('tryStage');
+      var size = document.getElementById('trySize');
+      var weight = document.getElementById('tryWeight');
+      if (!input || !stage) return;
+      function render() {
+        stage.textContent = input.value || 'Type something…';
+      }
+      input.addEventListener('input', render);
+      if (size) size.addEventListener('input', function () {
+        stage.style.fontSize = size.value + 'px';
+      });
+      if (weight) weight.addEventListener('input', function () {
+        stage.style.fontWeight = weight.value;
+      });
+      render();
+    })();
+  </script>
 </body>
 </html>

@@ -7,14 +7,20 @@ const SVGIcons2SVGFontStream = require('svgicons2svgfont').default || require('s
 
 const userId = process.argv[2];
 if (!userId) {
-    console.error('Usage: node generateTTF.js <userId>');
+    console.error('Usage: node generateTTF.js <userId> [inputDir] [fontName]');
     process.exit(1);
 }
 
+// Optional args let us build several weights from the same user: each weight's glyph
+// PNGs live in their own input dir and produce a separately-named TTF.
+const inputDirName = process.argv[3] || 'flipped_result';
+const fontName = process.argv[4] || `user_font_${userId}`;
+
 // [수정됨] 사용자별 고유 디렉토리를 기본 경로로 설정
 const baseDir = path.join(__dirname, 'FONT', userId.toString());
-const flippedDir = path.join(baseDir, 'flipped_result');
-const svgDir = path.join(baseDir, 'svg');
+const flippedDir = path.join(baseDir, inputDirName);
+// SVG scratch dirs are namespaced per font name so concurrent/repeat runs don't clash.
+const svgDir = path.join(baseDir, 'svg', fontName);
 const svgFontsDir = path.join(baseDir, 'svg_fonts');
 const ttfDir = path.join(baseDir, 'ttf_fonts');
 
@@ -28,20 +34,22 @@ const ttfDir = path.join(baseDir, 'ttf_fonts');
 // 이제 FONT/<userId>/flipped_result/ 에서 파일을 읽어옵니다.
 const files = fs.readdirSync(flippedDir).filter(f => f.endsWith('.png'));
 
+const traceBlurRadius = Number(process.env.SOULFONT_TRACE_BLUR_RADIUS || 1);
+const traceBlurDelta = Number(process.env.SOULFONT_TRACE_BLUR_DELTA || 64);
+const tracePathOmit = Number(process.env.SOULFONT_TRACE_PATH_OMIT || 8);
+
 const option = {
     ltres: 1,
     qtres: 1,
     strokewidth: 0.5,
-    pathomit: 8,
-    blurradius: 0,
-    blurdelta: 10,
+    pathomit: tracePathOmit,
+    blurradius: traceBlurRadius,
+    blurdelta: traceBlurDelta,
     pal: [{ r: 0, g: 0, b: 0, a: 255 }, { r: 255, g: 255, b: 255, a: 255 }],
     linefilter: true
 };
 
 async function generateFont(userId) {
-    const fontName = `user_font_${userId}`;
-
     // PNG → SVG 변환
     for (const file of files) {
         const fileName = path.basename(file, '.png');
@@ -69,7 +77,7 @@ async function generateFont(userId) {
     });
     
     // [경로 수정됨] 모든 경로는 사용자별 디렉토리 하위에 생성됩니다.
-    const svgFontPath = path.join(svgFontsDir, 'font_temp.svg');
+    const svgFontPath = path.join(svgFontsDir, `${fontName}_temp.svg`);
     const ttfOutputPath = path.join(ttfDir, `${fontName}.ttf`);
 
     const writeStream = fs.createWriteStream(svgFontPath);

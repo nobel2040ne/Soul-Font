@@ -42,7 +42,7 @@
           <div class="steps2">
             <div class="step-box">
               <h3>1 · Download template</h3>
-              <p>Print the 28-cell sheet (or write on a tablet).</p>
+              <p>Print all pages — Korean samples plus English &amp; symbols — and write each cell (or fill it on a tablet).</p>
               <a class="btn block" href="{% url 'download_template' %}?file=28_template.pdf">Get Template (PDF)</a>
             </div>
             <div class="step-box">
@@ -75,6 +75,20 @@
             </label>
           </div>
 
+          <h3 style="margin:14px 0 8px;">Compute</h3>
+          <div class="speed">
+            <label class="sel" id="lbl-cpu">
+              <input type="radio" name="accelerator" value="cpu" checked>
+              <span class="name">CPU stable</span>
+              <div class="desc">Matches the original HAI pipeline.</div>
+            </label>
+            <label id="lbl-mps">
+              <input type="radio" name="accelerator" value="mps">
+              <span class="name">M1 Pro GPU</span>
+              <div class="desc">Metal fp32 mode. Faster on some runs, still experimental.</div>
+            </label>
+          </div>
+
           <div class="right-row">
             <button type="submit" class="btn default">Create Font</button>
           </div>
@@ -90,6 +104,13 @@
       r.addEventListener('change', function () {
         lf.classList.toggle('sel', lf.querySelector('input').checked);
         lu.classList.toggle('sel', lu.querySelector('input').checked);
+      });
+    });
+    var lc = document.getElementById('lbl-cpu'), lm = document.getElementById('lbl-mps');
+    document.querySelectorAll('input[name=accelerator]').forEach(function (r) {
+      r.addEventListener('change', function () {
+        lc.classList.toggle('sel', lc.querySelector('input').checked);
+        lm.classList.toggle('sel', lm.querySelector('input').checked);
       });
     });
     document.getElementById('fontForm').addEventListener('submit', function (e) {

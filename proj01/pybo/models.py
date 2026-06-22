@@ -21,6 +21,9 @@ class UserData(models.Model):
     ttf_file = models.FileField(
       upload_to='ttf_files/',
       default='ttf_files/MaruBuri-Regular.ttf')
+    # Synthetic weights generated alongside the Regular one (blank until generated).
+    ttf_file_light = models.FileField(upload_to='ttf_files/', null=True, blank=True)
+    ttf_file_bold = models.FileField(upload_to='ttf_files/', null=True, blank=True)
     quote = models.TextField()
 
     # User-editable font metadata (written into the TTF by set_font_metadata.py)
