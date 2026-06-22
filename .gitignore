@@ -1,0 +1,60 @@
+# ---- OS ----
+.DS_Store
+*.Rhistory
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ---- Virtual environments ----
+venvproj01/
+venv/
+.venv/
+env/
+ENV/
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- Django ----
+*.log
+db.sqlite3
+db.sqlite3-journal
+/proj01/staticfiles/
+local_settings.py
+
+# ---- Secrets / env ----
+.env
+*.env
+
+# ---- Large data / model / media assets (not version-controlled) ----
+proj01/FONT/
+proj01/static/
+proj01/media/
+proj01/uploads/
+proj01/checkpoints/
+
+# ---- Model / archive binaries ----
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.pkl
+*.zip
+*.tar
+*.tar.gz
+
+# ---- Editor ----
+.idea/
+.vscode/
+*.swp
