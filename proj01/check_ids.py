@@ -2,7 +2,7 @@
 import os
 import pickle
 
-# 1) pair_dir 에서 파일명 앞부분(ID) 뽑기
+# 1) extract the leading ID from filenames in pair_dir
 pair = "pair_dir"
 pair_ids = sorted({
     fn.split("_", 1)[0]
@@ -11,7 +11,7 @@ pair_ids = sorted({
 })
 print("▶ pair_dir embedding IDs:", pair_ids)
 
-# 2) package_dir 의 train.obj / val.obj 에 pickle 된 ID 뽑기
+# 2) extract the pickled IDs from train.obj / val.obj in package_dir
 pkg = "package_dir"
 for split in ("train", "val"):
     path = os.path.join(pkg, f"{split}.obj")

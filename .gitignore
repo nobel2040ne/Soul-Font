@@ -39,10 +39,16 @@ local_settings.py
 
 # ---- Large data / model / media assets (not version-controlled) ----
 proj01/FONT/
-proj01/static/
-proj01/media/
+proj01/media/*
+# ...but keep the bundled default font the app ships with.
+!proj01/media/ttf_files/
+proj01/media/ttf_files/*
+!proj01/media/ttf_files/MaruBuri-Regular.ttf
 proj01/uploads/
 proj01/checkpoints/
+
+# Generated raster outputs
+*.png
 
 # ---- Model / archive binaries ----
 *.pth

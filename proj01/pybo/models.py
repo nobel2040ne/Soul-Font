@@ -10,10 +10,18 @@ class Font(models.Model):
         return self.text
     
 class UserData(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, default = None)
+    # One row per *font*. A user may own several, so this is a ForeignKey (it used to
+    # be OneToOne). The row's own primary key (id) identifies the font everywhere —
+    # URLs, FONT/ working dirs, and generated TTF basenames.
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='fonts', default=None)
     font_name = models.CharField(max_length=100, default='Default Font')
     profile_image = models.ImageField(upload_to='profiles/', null=True, blank=True)
-    
+
+    # The single font each user features on the public Home page. At most one of a
+    # user's fonts has this set; selecting a new one clears the others.
+    show_on_home = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
     template1 = models.ImageField(upload_to='templates/', null=True, blank=True)
     template2 = models.ImageField(upload_to='templates/', null=True, blank=True)
     template3 = models.ImageField(upload_to='templates/', null=True, blank=True)
@@ -33,6 +41,9 @@ class UserData(models.Model):
     license_url = models.CharField(max_length=200, blank=True, default='')
     description = models.TextField(blank=True, default='')
     version = models.CharField(max_length=30, blank=True, default='1.000')
+
+    class Meta:
+        ordering = ['-created_at', '-id']
 
     def __str__(self):
         return f"{self.user.username} – {self.font_name}"

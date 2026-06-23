@@ -6,16 +6,17 @@
   <title>Font Editor — SoulFont</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
   <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=editor-unified-1">
   <style>
     {% if ttf_file %}
-    @font-face { font-family: "SoulFontEdit-{{ profile_user.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); font-weight: 400; }
+    @font-face { font-family: "SoulFontEdit-{{ user_data.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); font-weight: 400; }
     {% endif %}
     {% if ttf_file_light %}
-    @font-face { font-family: "SoulFontEdit-{{ profile_user.id }}"; src: url("{{ ttf_file_light.url }}") format("truetype"); font-weight: 300; }
+    @font-face { font-family: "SoulFontEdit-{{ user_data.id }}"; src: url("{{ ttf_file_light.url }}") format("truetype"); font-weight: 300; }
     {% endif %}
     {% if ttf_file_bold %}
-    @font-face { font-family: "SoulFontEdit-{{ profile_user.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
+    @font-face { font-family: "SoulFontEdit-{{ user_data.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
     {% endif %}
     .editor-grid { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
     .panel { border: 1px solid #000; padding: 14px; }
@@ -23,12 +24,14 @@
     .control label { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; margin-bottom: 5px; }
     .control input[type="range"] { width: 100%; }
     .preview-stage {
-      border: 1px solid #000; background: #fff; min-height: 300px; padding: 26px;
+      border: 1px solid #000; background: #fff; min-height: 300px; max-height: 300px;
+      max-width: 100%; padding: 26px; overflow: hidden;
       display: flex; align-items: center; justify-content: center; text-align: center;
     }
     .preview-text {
-      font-family: "SoulFontEdit-{{ profile_user.id }}", "Geneva", sans-serif;
-      word-break: keep-all; white-space: pre-wrap;
+      font-family: "SoulFontEdit-{{ user_data.id }}", "Geneva", sans-serif;
+      max-width: 100%; max-height: 100%; overflow: hidden;
+      word-break: break-word; white-space: pre-wrap;
     }
     .download-box { border: 1px solid #000; padding: 10px; margin-bottom: 12px; }
     @media (max-width: 760px) { .editor-grid { grid-template-columns: 1fr; } }

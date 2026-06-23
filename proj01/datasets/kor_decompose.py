@@ -3,7 +3,7 @@ DMFont
 Copyright (c) 2020-present NAVER Corp.
 MIT license
 """
-COMPONENT_RANGE = (int('3131', 16), int('3163', 16))  # kr 자음/모음
+COMPONENT_RANGE = (int('3131', 16), int('3163', 16))  # Hangul consonants/vowels
 COMPLETE_RANGE = (int('ac00', 16), int('d7a3', 16))   # kr all complete chars
 COMPLETE_SET = frozenset(chr(code) for code in range(COMPLETE_RANGE[0], COMPLETE_RANGE[1]+1))
 COMPLETE_LIST = sorted(COMPLETE_SET)

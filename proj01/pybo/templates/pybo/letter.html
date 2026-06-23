@@ -6,6 +6,7 @@
   <title>Write a Letter — SoulFont</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
   <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=mac-slider-2">
   <style>
     {% for ud in users %}{% if ud.ttf_file %}
@@ -53,9 +54,35 @@
       background-size: cover; background-position: center;
     }
     .design-btn.sel { box-shadow: 0 0 0 2px #000, 3px 3px 0 #000; }
+    /* swatch previews — the #paper.design-* rules are id-scoped, so the buttons need
+       their own mini backgrounds or they'd render as empty boxes. */
+    .design-btn.design-plain { background: #fff; }
+    .design-btn.design-lined {
+      background-color: #fff;
+      background-image: linear-gradient(#cfe0f0 1px, transparent 1px);
+      background-size: 100% 9px; background-position: 0 6px;
+    }
+    .design-btn.design-grid {
+      background-color: #fff;
+      background-image:
+        linear-gradient(#d2d2d2 1px, transparent 1px),
+        linear-gradient(90deg, #d2d2d2 1px, transparent 1px);
+      background-size: 8px 8px;
+    }
+    .design-btn.design-vintage { background: #f6efde; border-color: #b89a5e; box-shadow: 0 0 0 2px #f6efde inset, 0 0 0 3px #b89a5e inset; }
+    .design-btn.design-vintage.sel { box-shadow: 0 0 0 2px #000, 3px 3px 0 #000; }
+    .design-btn.design-note { background: #fff7b0; }
+    .design-btn.design-blush {
+      background-color: #fdeef0;
+      background-image: radial-gradient(#f6cdd5 1px, transparent 1.5px);
+      background-size: 7px 7px;
+    }
     .seg { display: inline-flex; flex-wrap: wrap; }
     .seg .btn { min-width: 40px; }
     .seg .btn.sel { font-weight: bold; box-shadow: 0 0 0 2px #000 inset; }
+    /* match the 14px trailing space the carousel leaves after section 1, so the
+       gap before "3 · Write your letter" equals the gap before "2 · Choose a paper" */
+    #ratioSeg { display: flex; margin-bottom: 14px; }
 
     /* ---------- classic document window (SimpleText-style) ---------- */
     .doc-window { max-width: 760px; margin: 6px auto 4px; }
@@ -80,15 +107,17 @@
       width: 520px; max-width: 100%; padding: 48px 44px;
       box-sizing: border-box; color: #111;
       display: flex; flex-direction: column; gap: 22px;
+      overflow: hidden;  /* strictly clip anything that runs past the page bounds */
       box-shadow: 0 2px 0 rgba(0,0,0,.35), 0 6px 14px rgba(0,0,0,.35);
     }
     #paper .letter-body {
-      flex: 1; outline: none; font-size: 32px; line-height: 1.55; word-break: keep-all;
-      white-space: pre-wrap;
+      flex: 1 1 auto; min-height: 0; outline: none; font-size: 22px; line-height: 1.55;
+      word-break: break-word; overflow: hidden; white-space: pre-wrap;
     }
     #paper .letter-body:empty::before { content: attr(data-placeholder); color: #999; }
     #paper .letter-sign {
-      outline: none; font-size: 28px; text-align: right; line-height: 1.4; min-height: 1em;
+      flex: 0 0 auto; outline: none; font-size: 19px; text-align: right; line-height: 1.4;
+      min-height: 1em; overflow: hidden; word-break: break-word; white-space: pre-wrap;
     }
     #paper .letter-sign:empty::before { content: attr(data-placeholder); color: #999; }
 
@@ -125,7 +154,7 @@
 
     @media (max-width: 560px) {
       #paper { padding: 30px 22px; }
-      #paper .letter-body { font-size: 26px; }
+      #paper .letter-body { font-size: 20px; }
       .carousel-strip { padding: 14px 44px; }
       .doc-scroll { padding: 12px; }
     }
@@ -193,7 +222,7 @@
           <div class="separator"></div>
           <div class="editor-toolbar">
             <label for="bodySize">Size</label>
-            <input class="ctl-size" id="bodySize" type="range" min="18" max="56" value="32">
+            <input class="ctl-size" id="bodySize" type="range" min="14" max="56" value="22">
             <label for="bodyWeight">Weight</label>
             <input class="ctl-size" id="bodyWeight" type="range" min="300" max="700" step="100" value="400">
             <span class="seg" id="alignSeg">

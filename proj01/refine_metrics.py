@@ -27,9 +27,12 @@ SB_CJK = 96            # roomier side bearing for Hangul/CJK
 DESC_DEPTH = 200       # how far descenders drop below the baseline
 SPACE_ADVANCE = 320    # advance for empty glyphs (space)
 CAP_TOP = 720          # top target for quote marks and other top-hanging marks
+MID_LINE = CAP_TOP // 2  # vertical center target for symmetric brackets
 
 # Glyphs that should hang below the baseline rather than rest on it.
-DESCENDERS = set(ord(c) for c in "gjpqy,;()")
+DESCENDERS = set(ord(c) for c in "gjpqy,;")
+# Tall symmetric brackets read best centered on the text, not sitting on the baseline.
+CENTERED = set(ord(c) for c in "()")
 TOP_ALIGNED = set(ord(c) for c in "'\"`´‘’“”")
 
 
@@ -76,6 +79,9 @@ def refine_metrics(ttf_path, out_path=None):
         if cp in TOP_ALIGNED:
             # Quotes/apostrophes hang near the cap-height top, not on the baseline.
             dy = CAP_TOP - g.yMax
+        elif cp in CENTERED:
+            # Brackets: center the ink on the text midline so they straddle the baseline.
+            dy = MID_LINE - (g.yMin + g.yMax) // 2
         else:
             # vertical: rest on the baseline; descenders hang below it
             drop = DESC_DEPTH if (cp in DESCENDERS) else 0

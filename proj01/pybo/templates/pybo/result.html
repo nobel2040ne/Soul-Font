@@ -6,14 +6,17 @@
   <title>Name Your Font — SoulFont</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
   <link rel="stylesheet" href="{% static 'css/retro.css' %}">
   <style>
     .live { border: 1px solid #000; padding: 20px; text-align: center; min-height: 70px;
+            max-height: 220px; max-width: 100%; overflow: hidden;
             display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-    .live .pv { font-size: 1.8rem; line-height: 1.4; word-break: keep-all; }
+    .live .pv { font-size: 1.8rem; line-height: 1.4; word-break: break-word;
+                max-width: 100%; max-height: 100%; overflow: hidden; }
     {% if user_data.ttf_file %}
-    @font-face { font-family: "SoulFont-{{ user_data.user.id }}"; src: url("{{ user_data.ttf_file.url }}") format("truetype"); }
-    .live .pv { font-family: "SoulFont-{{ user_data.user.id }}", "Geneva", sans-serif; }
+    @font-face { font-family: "SoulFont-{{ user_data.id }}"; src: url("{{ user_data.ttf_file.url }}") format("truetype"); }
+    .live .pv { font-family: "SoulFont-{{ user_data.id }}", "Geneva", sans-serif; }
     {% endif %}
     details.adv { border: 1px solid #000; margin-bottom: 14px; }
     details.adv > summary { cursor: pointer; padding: 8px 10px; font-weight: bold; }
@@ -41,7 +44,7 @@
 
         {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
 
-        <form method="post" action="{% url 'result' %}" enctype="multipart/form-data">
+        <form method="post" action="{% if user_data.id %}{% url 'result_edit' user_data.id %}{% else %}{% url 'result' %}{% endif %}" enctype="multipart/form-data">
           {% csrf_token %}
 
           <div class="profile-editor">

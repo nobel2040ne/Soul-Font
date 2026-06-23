@@ -27,15 +27,22 @@ On macOS, Poppler can be installed with Homebrew:
 brew install poppler
 ```
 
-## Required local assets
+## Required model checkpoint (the one manual download)
 
-Some generated or large files are intentionally not tracked by Git. For the complete font-generation workflow, make sure these files/directories exist:
+The handwriting template (`proj01/static/templates/28_template.pdf`) and the default
+font (`proj01/media/ttf_files/MaruBuri-Regular.ttf`) are already included in the repo,
+so the **only** asset you must download yourself is the model checkpoint (it is too
+large to track in Git):
 
-- `proj01/checkpoints/korean-handwriting.pth` - model checkpoint used by `font_processor.py`.
-- `proj01/static/templates/28_template.pdf` - downloadable handwriting template.
-- `proj01/media/ttf_files/MaruBuri-Regular.ttf` - default font file referenced by `UserData`.
+1. Open the DM-Font v1.0.0 release: https://github.com/clovaai/dmfont/releases/tag/v1.0.0
+2. Download the pretrained Korean generator weights.
+3. Save the file as `proj01/checkpoints/korean-handwriting.pth` (create the
+   `proj01/checkpoints/` folder and rename the downloaded file to that exact name).
 
-The app will create runtime directories such as `proj01/media/`, `proj01/uploads/`, `proj01/FONT/`, `proj01/style/`, and `proj01/static/outputs/` as users generate fonts.
+Without this file the web app still runs, but font generation will fail at the
+inference step. The app creates the runtime directories it needs
+(`proj01/uploads/`, `proj01/FONT/`, `proj01/style/`, `proj01/static/outputs/`, and
+additional files under `proj01/media/`) automatically as fonts are generated.
 
 ## Setup
 

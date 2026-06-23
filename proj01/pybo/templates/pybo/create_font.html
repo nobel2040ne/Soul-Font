@@ -6,6 +6,7 @@
   <title>Create Your Font — SoulFont</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
   <link rel="stylesheet" href="{% static 'css/retro.css' %}">
   <style>
     .steps2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
@@ -19,6 +20,12 @@
     .speed label.sel { box-shadow: 0 0 0 2px #000 inset; }
     .speed .name { font-weight: bold; }
     .speed .desc { font-size: 12px; }
+    .tip { border: 1px solid #000; background: #f3f3f3; padding: 10px 12px 10px; font-size: 13px; line-height: 1.6; margin-top: 10px; }
+    .tip .tip-title { font-weight: bold; display: block; margin-bottom: 4px; }
+    .tip ul { margin: 0; padding-left: 18px; }
+    .tip li { margin: 2px 0; }
+    .tip b { white-space: nowrap; }
+    .tip .arrow { opacity: 0.6; padding: 0 4px; }
   </style>
 </head>
 <body class="desktop">
@@ -35,6 +42,15 @@
       <div class="window-pane">
         <h2 class="page-title">Create Your Own Font</h2>
         <p class="lede">Download the template, write it by hand, then upload the PDF.</p>
+
+        <div class="tip">
+          <span class="tip-title">Tips for the best results</span>
+          <ul>
+            <li>On a tablet: <b>Download</b><span class="arrow">→</span><b>Import</b> into Goodnotes or your tablet notes app<span class="arrow">→</span><b>Draw</b> in each cell<span class="arrow">→</span><b>Upload</b> the exported PDF.</li>
+            <li>Write with <b>smooth, steady strokes</b> — cleaner handwriting traces into a cleaner font.</li>
+            <li>The AI model only generates <b>Korean</b>. The <b>English &amp; symbol</b> cells are traced straight from your handwriting, so write those extra carefully.</li>
+          </ul>
+        </div>
 
         <form id="fontForm" action="{% url 'learning' %}" method="post" enctype="multipart/form-data">
           {% csrf_token %}

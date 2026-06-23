@@ -6,6 +6,7 @@
   <title>SoulFont — Feel Your Font</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
   <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=directory-visibility-2">
   <style>
     {% for ud in users %}{% if ud.ttf_file %}
@@ -56,12 +57,12 @@
                     <div class="profile-avatar small">{{ ud.user.username|first|upper }}</div>
                   {% endif %}
                   <div class="profile-copy">
-                    <a class="profile-name" href="{% url 'user_page' user_id=ud.user.id %}">@ {{ ud.user.username }}</a>
+                    <a class="profile-name" href="{% url 'user_page' ud.id %}">@ {{ ud.user.username }}</a>
                     <div class="muted">{{ ud.font_name }}</div>
                   </div>
                 </div>
                 <div class="directory-actions">
-                  <a class="btn" href="{% url 'user_page' user_id=ud.user.id %}">Open</a>
+                  <a class="btn" href="{% url 'user_page' ud.id %}">Open</a>
                   <a class="btn default" href="{{ ud.ttf_file.url }}" download>Get</a>
                 </div>
               </div>
@@ -86,7 +87,7 @@
                     <div class="profile-avatar small">{{ ud.user.username|first|upper }}</div>
                   {% endif %}
                   <div class="profile-copy">
-                    <a class="profile-name" href="{% url 'user_page' user_id=ud.user.id %}">@ {{ ud.user.username }}</a>
+                    <a class="profile-name" href="{% url 'user_page' ud.id %}">@ {{ ud.user.username }}</a>
                     <div class="muted">{{ ud.font_name }}</div>
                   </div>
                 </div>

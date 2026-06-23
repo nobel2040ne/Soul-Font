@@ -6,5 +6,4 @@ class PyboConfig(AppConfig):
     name = 'pybo'
 
     def ready(self):
-        # 앱이 준비될 때 signals 모듈을 import
         import pybo.signals    

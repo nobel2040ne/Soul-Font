@@ -26,7 +26,7 @@ class StyleImageDataset(Dataset):
         char = self.style_chars[idx]
         comp_ids = self.decompose(char)
 
-        img = Image.open(path).convert('L')  # 흑백
+        img = Image.open(path).convert('L')
         if self.transform:
             img = self.transform(img)
 

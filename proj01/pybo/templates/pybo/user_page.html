@@ -6,23 +6,29 @@
   <title>{{ profile_user.username }} — SoulFont</title>
   <link rel="stylesheet" href="https://unpkg.com/@sakun/system.css" />
   {% load static %}
-  <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=profile-actions-1">
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/retro.css' %}?v=profile-actions-2">
   <style>
     .preview { border: 1px solid #000; padding: 34px 18px; text-align: center; margin: 4px 0 16px;
-               min-height: 120px; display: flex; align-items: center; justify-content: center; }
-    .preview .q { font-size: 2.2rem; line-height: 1.4; word-break: keep-all; }
+               min-height: 120px; max-height: 260px; max-width: 100%; overflow: hidden;
+               display: flex; align-items: center; justify-content: center; }
+    .preview .q { font-size: 2.2rem; line-height: 1.4; word-break: break-word;
+                  max-width: 100%; max-height: 100%; overflow: hidden; }
     {% if ttf_file_light %}
-    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file_light.url }}") format("truetype"); font-weight: 300; }
+    @font-face { font-family: "SoulFont-{{ user_data.id }}"; src: url("{{ ttf_file_light.url }}") format("truetype"); font-weight: 300; }
     {% endif %}
     {% if ttf_file %}
-    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); font-weight: 400; }
-    .preview .q { font-family: "SoulFont-{{ profile_user.id }}", "Geneva", sans-serif; }
+    @font-face { font-family: "SoulFont-{{ user_data.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); font-weight: 400; }
+    .preview .q { font-family: "SoulFont-{{ user_data.id }}", "Geneva", sans-serif; }
     {% endif %}
     {% if ttf_file_bold %}
-    @font-face { font-family: "SoulFont-{{ profile_user.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
+    @font-face { font-family: "SoulFont-{{ user_data.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
     {% endif %}
     .meta-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #ccc; font-size: 14px; }
     .meta-row .k { font-weight: bold; }
+    .my-fonts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 14px; }
+    .my-fonts .of-label { font-size: 13px; color: #555; width: 100%; }
+    .my-fonts .btn.sel { font-weight: bold; box-shadow: 0 0 0 2px #000 inset; }
 
     /* try-it-out box */
     .tryout { border: 1px solid #000; padding: 14px 16px 16px; margin: 18px 0; }
@@ -34,11 +40,13 @@
     .tryout .tryout-size { flex: 1; min-width: 140px; }
     .tryout .tryout-stage {
       border: 1px solid #000; margin-top: 12px; padding: 22px 16px; min-height: 90px;
+      max-height: 240px; max-width: 100%; overflow: hidden;
       display: flex; align-items: center; justify-content: center; text-align: center;
       background: #fff;
     }
+    .tryout .tryout-stage .ts { max-width: 100%; max-height: 100%; overflow: hidden; word-break: break-word; white-space: pre-wrap; }
     {% if ttf_file %}
-    .tryout .tryout-stage .ts { font-family: "SoulFont-{{ profile_user.id }}", "Geneva", sans-serif; line-height: 1.4; word-break: keep-all; }
+    .tryout .tryout-stage .ts { font-family: "SoulFont-{{ user_data.id }}", "Geneva", sans-serif; line-height: 1.4; }
     {% endif %}
   </style>
 </head>
@@ -63,14 +71,36 @@
           {% endif %}
           <div class="profile-copy">
             <div class="profile-name">@ {{ profile_user.username }}</div>
-            {% if request.user.id == profile_user.id %}
-              <div class="profile-actions">
-                <a class="btn" href="{% url 'result' %}">Edit Profile</a>
-                <a class="btn" href="{% url 'font_editor' profile_user.id %}">Font Editor</a>
-              </div>
-            {% endif %}
+            <div class="muted">{{ font_name }}</div>
           </div>
         </div>
+
+        {% if is_owner %}
+        <div class="profile-actions">
+          <a class="btn" href="{% url 'result_edit' user_data.id %}">Edit Profile</a>
+          <a class="btn" href="{% url 'font_editor' user_data.id %}">Font Editor</a>
+          <a class="btn" href="{% url 'create_font' %}">New Font</a>
+          {% if user_data.show_on_home %}
+            <span class="btn sel" aria-disabled="true">★ On Home</span>
+          {% else %}
+            <form method="post" style="display:inline">
+              {% csrf_token %}
+              <button class="btn" type="submit" name="set_home" value="1">Show on Home</button>
+            </form>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if is_owner %}
+        <div class="my-fonts">
+          <span class="of-label">Your fonts — the ★ one shows on Home:</span>
+          {% for f in user_fonts %}
+            <a class="btn {% if f.id == user_data.id %}sel{% endif %}" href="{% url 'user_page' f.id %}">
+              {% if f.show_on_home %}★ {% endif %}{{ f.font_name }}
+            </a>
+          {% endfor %}
+        </div>
+        {% endif %}
 
         <div class="preview">
           {% if quote %}<div class="q font-preview">{{ quote }}</div>{% else %}<div class="muted">No quote yet.</div>{% endif %}
