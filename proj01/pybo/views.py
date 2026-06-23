@@ -219,10 +219,11 @@ def font_editor(request, font_id):
     return render(request, 'pybo/font_editor.html', context)
 
 def letter(request):
-    # Letter composer: pick any generated font (sliding carousel), write a note,
-    # choose a paper design, and export the result as a PNG (done client-side).
-    # Only real generated fonts — skip the default-TTF placeholders.
+    # Letter composer: pick a font (sliding carousel), write a note, choose a paper
+    # design, and export the result as a PNG (done client-side). The picker mirrors
+    # Home — only each user's featured (home) font, never the default placeholder.
     users = (UserData.objects.select_related('user')
+             .filter(show_on_home=True)
              .exclude(ttf_file=DEFAULT_TTF)
              .exclude(ttf_file='')
              .order_by('-created_at', '-id'))
