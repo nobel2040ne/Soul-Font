@@ -1,6 +1,17 @@
-# Soul Font
+# Soul Font &mdash; AI Korean Handwriting Font Generator
+
+> Generate a personal **Korean handwriting (Hangul) TTF font** from a single PDF template using deep learning. A Django + PyTorch + Node.js web app powered by the DM-Font few-shot font generation model.
+
+[![Python](https://img.shields.io/badge/Python-3.9-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-4.2-092E20?style=flat&logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.7-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![GitHub stars](https://img.shields.io/github/stars/nobel2040ne/Soul-Font?style=flat&logo=github)](https://github.com/nobel2040ne/Soul-Font/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/nobel2040ne/Soul-Font?style=flat&logo=github)](https://github.com/nobel2040ne/Soul-Font/commits)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
 
 Soul Font Advanced is a Django web application for creating a personal Korean handwriting font from a completed PDF handwriting template. The app accepts a user's template upload, crops and cleans the glyph samples, runs the handwriting model for Hangul generation, vectorizes the generated PNG glyphs with Node.js, and saves a downloadable TTF font.
+
+**Keywords:** Korean handwriting font, Hangul font generator, deep learning font generation, few-shot font synthesis, DM-Font, PDF to TTF, Django machine learning app, PyTorch font model, 한글 손글씨 폰트.
 
 ## What is in this repository
 
