@@ -49,6 +49,8 @@ proj01/checkpoints/
 
 # Generated raster outputs
 *.png
+# ...but keep README/docs screenshots
+!docs/*.png
 
 # ---- Model / archive binaries ----
 *.pth
