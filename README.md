@@ -8,6 +8,10 @@ Soul Font is a Django web application for creating a personal Korean handwriting
 
 ![Soul Font — Coverflow view of community fonts](docs/coverflow.png)
 
+## Demo
+
+Watch the demo video: https://www.youtube.com/watch?v=X25yWyhzacM
+
 ## What is in this repository
 
 - `proj01/` - main Django project and app.
