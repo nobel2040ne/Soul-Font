@@ -23,6 +23,9 @@ from char_layout import TEMPLATE_COLS, TEMPLATE_ROWS  # noqa: E402
 parser = argparse.ArgumentParser()
 parser.add_argument("--src_dir", required=True)
 parser.add_argument("--dst_dir", required=True)
+parser.add_argument("--frame_dir", default=None,
+                    help="optional second output keeping each cell's own framing, for "
+                         "glyphs traced directly into the font")
 parser.add_argument("--rows", type=int, default=TEMPLATE_ROWS)
 parser.add_argument("--cols", type=int, default=TEMPLATE_COLS)
 args = parser.parse_args()
@@ -34,6 +37,8 @@ TOP_EXTRA_FRAC = 0.05   # extra trim off each cell top (drops the printed guide 
 OUT_SIZE = 512
 
 os.makedirs(args.dst_dir, exist_ok=True)
+if args.frame_dir:
+    os.makedirs(args.frame_dir, exist_ok=True)
 
 
 def detect_grid_bbox(gray):
@@ -63,7 +68,12 @@ def detect_grid_bbox(gray):
 
 
 def process_cell(cell):
-    """Trim whitespace, square-pad and resize a single cell image."""
+    """Trim whitespace, square-pad and resize a single cell image.
+
+    Every mark ends up filling its own frame. That is what the handwriting model wants —
+    it reads one normalized glyph at a time — but it throws away how big the mark actually
+    was, so use frame_cell() for anything that is traced straight into the font.
+    """
     bg = Image.new("L", cell.size, 255)
     diff = ImageChops.difference(cell, bg)
     bbox = diff.getbbox()
@@ -71,6 +81,21 @@ def process_cell(cell):
         cell = cell.crop(bbox)
 
     cell = ImageOps.expand(cell, border=30, fill=255)
+    side = max(cell.size)
+    square = Image.new("L", (side, side), 255)
+    square.paste(cell, ((side - cell.width) // 2, (side - cell.height) // 2))
+    return square.resize((OUT_SIZE, OUT_SIZE), Image.BICUBIC)
+
+
+def frame_cell(cell):
+    """Square-pad and resize a cell *without* trimming to the mark inside it.
+
+    Because every cell is the same size on the printed template, keeping the cell as the
+    frame keeps each mark's true size and position: 'a' stays smaller than 'b', a comma
+    stays low, and one pen width stays one pen width. Trimming to each mark's own bounding
+    box magnifies the small ones — which is why lowercase came out both oversized and far
+    heavier than the capitals written beside it.
+    """
     side = max(cell.size)
     square = Image.new("L", (side, side), 255)
     square.paste(cell, ((side - cell.width) // 2, (side - cell.height) // 2))
@@ -109,9 +134,11 @@ for fname in sorted(os.listdir(args.src_dir)):
             lo = int(top + (r + 1) * cell_h - pad_y)
             if rt <= l or lo <= u:
                 continue
-            cell = process_cell(img.crop((l, u, rt, lo)))
+            raw = img.crop((l, u, rt, lo))
             out_name = f"uni{START_UNICODE + count:04X}.png"
-            cell.save(os.path.join(args.dst_dir, out_name))
+            process_cell(raw).save(os.path.join(args.dst_dir, out_name))
+            if args.frame_dir:
+                frame_cell(raw).save(os.path.join(args.frame_dir, out_name))
             count += 1
 
 print(f"complete {count} cells are saved: {args.dst_dir}")

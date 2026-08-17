@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
-from django.http import FileResponse, JsonResponse  # type: ignore
+from django.http import FileResponse  # type: ignore
 from django.core.files.storage import FileSystemStorage  # type: ignore
 from django.conf import settings  # type: ignore
 from django.contrib.auth import authenticate, login, logout #type: ignore
@@ -9,15 +9,19 @@ from django.contrib.auth.decorators import login_required #type: ignore
 from .models import Font, UserData
 from .forms import CustomUserCreationForm
 
-import os, threading, shutil, subprocess, uuid
+import os, json, threading, shutil, subprocess, uuid
 from font_processor import (
+    AUTO_BOLD_AMOUNT,
+    AUTO_LIGHT_AMOUNT,
     FontStyleProcessor,
     DEFAULT_CHARSET,
     make_weight_variant,
-    stabilize_strokes,
+    prepare_trace_images,
+    script_fit_scales,
 )
 from set_font_metadata import apply_metadata
-from refine_metrics import adjust_font_geometry, refine_metrics
+from refine_metrics import adjust_font_geometry, measure_fit, refine_metrics
+from glyph_vectorizer import build_ttf
 
 DEFAULT_FONT_NAME = "My Handwriting"  # default family name until the user renames it
 FULL_CHARSET = os.path.join(settings.BASE_DIR, 'data', 'charset', 'korean11172.txt')
@@ -126,6 +130,51 @@ def _clamp_float(value, default, low, high):
 def _has_pngs(path):
     return os.path.isdir(path) and any(f.lower().endswith('.png') for f in os.listdir(path))
 
+# Outlines come from the Python curve fitter. generateTTF.js (ImageTracer) stays available
+# behind SOULFONT_VECTORIZER=imagetracer as an escape hatch, but it emits mostly straight
+# segments, so its output looks faceted next to a real font.
+def _vectorize(glyph_dir, out_path, font_basename, font_id):
+    """Trace a directory of glyph PNGs into a TTF at out_path."""
+    if os.environ.get('SOULFONT_VECTORIZER', '').lower() != 'imagetracer':
+        # Tell the tracer how much each script will be scaled afterwards, so its
+        # tolerances mean the same thing in the finished font for both.
+        return build_ttf(glyph_dir, out_path, font_basename,
+                         fit_scales=script_fit_scales(glyph_dir))
+
+    generate_ttf_js = os.path.join(settings.BASE_DIR, 'generateTTF.js')
+    subprocess.run(
+        ['node', generate_ttf_js, str(font_id), os.path.basename(glyph_dir), font_basename],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,
+    )
+    src = os.path.join(settings.BASE_DIR, 'FONT', str(font_id), 'ttf_fonts',
+                       f'{font_basename}.ttf')
+    if not os.path.exists(src):
+        raise FileNotFoundError(f'TTF generation failed: {src} does not exist.')
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    shutil.move(src, out_path)
+    return out_path
+
+# How the font's Hangul and Latin were sized and spaced when it was first generated. Saved
+# next to the working glyphs so later exports (the editor) can match the family instead of
+# re-fitting a stroke-adjusted glyph set to a different size.
+FIT_FILE = 'glyph_fit.json'
+
+def _save_fit(user_font_dir, fit):
+    try:
+        os.makedirs(user_font_dir, exist_ok=True)
+        with open(os.path.join(user_font_dir, FIT_FILE), 'w') as f:
+            json.dump(fit, f)
+    except Exception as e:
+        print(f"[WARN] could not save glyph fit: {e}")
+
+def _load_fit(user_font_dir):
+    try:
+        with open(os.path.join(user_font_dir, FIT_FILE)) as f:
+            fit = json.load(f)
+        return fit if {'hangul', 'latin'} <= set(fit) else None
+    except Exception:
+        return None
+
 @login_required
 def font_editor(request, font_id):
     user_data = get_object_or_404(UserData, id=font_id)
@@ -143,23 +192,20 @@ def font_editor(request, font_id):
 
         try:
             user_font_dir = os.path.join(settings.BASE_DIR, 'FONT', str(font_id))
-            raw_source_dir = os.path.join(user_font_dir, 'flipped_result')
-            stable_source_dir = os.path.join(user_font_dir, 'flipped_result_stable')
-            if not _has_pngs(stable_source_dir) and _has_pngs(raw_source_dir):
-                try:
-                    stabilize_strokes(raw_source_dir, stable_source_dir)
-                except Exception as e:
-                    print(f"[WARN] editor stroke stabilizer skipped: {e}")
-
-            source_dir = stable_source_dir if _has_pngs(stable_source_dir) else raw_source_dir
+            # Stroke weight is applied on the prepared high-resolution glyphs, where an
+            # edge shift is a fraction of a stroke rather than a whole model pixel.
+            source_dir = os.path.join(user_font_dir, 'trace_regular')
             if not _has_pngs(source_dir):
-                source_dir = os.path.join(settings.BASE_DIR, 'static', 'outputs', f'user_{font_id}')
-            if not _has_pngs(source_dir):
-                raise FileNotFoundError('No generated glyph PNG directory found. Generate the font first.')
+                raw_dir = os.path.join(user_font_dir, 'flipped_result')
+                if not _has_pngs(raw_dir):
+                    raw_dir = os.path.join(settings.BASE_DIR, 'static', 'outputs', f'user_{font_id}')
+                if not _has_pngs(raw_dir):
+                    raise FileNotFoundError('No generated glyph PNG directory found. Generate the font first.')
+                prepare_trace_images(raw_dir, source_dir)
 
             variant_id = uuid.uuid4().hex[:8]
             input_dir_name = f'editor_{variant_id}'
-            variant_dir = os.path.join(settings.BASE_DIR, 'FONT', str(font_id), input_dir_name)
+            variant_dir = os.path.join(user_font_dir, input_dir_name)
             if stroke < 0:
                 make_weight_variant(source_dir, variant_dir, weight='light', amount=abs(stroke))
                 weight_label = 'Light'
@@ -171,20 +217,13 @@ def font_editor(request, font_id):
                 weight_label = 'Regular'
 
             font_basename = f'user_font_{font_id}_Edited_{variant_id}'
-            generate_ttf_js = os.path.join(settings.BASE_DIR, 'generateTTF.js')
-            subprocess.run(
-                ['node', generate_ttf_js, str(font_id), input_dir_name, font_basename],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,
-            )
-
-            src = os.path.join(settings.BASE_DIR, 'FONT', str(font_id), 'ttf_fonts', f'{font_basename}.ttf')
-            if not os.path.exists(src):
-                raise FileNotFoundError(f'Edited TTF was not created: {src}')
-
             final_name = f'{font_basename}.ttf'
             final_path = os.path.join(TTF_OUTPUT_DIR, final_name)
-            shutil.move(src, final_path)
-            refine_metrics(final_path)
+            _vectorize(variant_dir, final_path, font_basename, font_id)
+            # Reuse the family's original fit so the export stays the same size as the
+            # generated weights — a stroke-adjusted glyph set would otherwise be fitted to
+            # a different size on its own.
+            refine_metrics(final_path, fit=_load_fit(user_font_dir))
             adjust_font_geometry(final_path, letter_spacing=letter_spacing, glyph_scale=glyph_scale)
             apply_metadata(
                 final_path,
@@ -317,9 +356,7 @@ os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
 TTF_OUTPUT_DIR = os.path.join(settings.MEDIA_ROOT, 'ttf_files')
 os.makedirs(TTF_OUTPUT_DIR, exist_ok=True)
 
-PE_SCRIPT = os.path.join(settings.BASE_DIR, 'generate.pe')
-
-def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSET, device_name='cpu'):
+def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSET, device_name='auto'):
     # Everything is keyed on the font's id (UserData.id), so a user's fonts never
     # collide on disk or overwrite each other's TTFs.
     style_id = f"user_{font_id}"
@@ -348,43 +385,46 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
                 )
         print(f"[DEBUG] Copied inferred images to {flipped_result_dir}")
 
-        stable_result_dir = os.path.join(user_font_dir, 'flipped_result_stable')
-        stable_input_dir_name = 'flipped_result_stable'
+        # The model draws at 128x128. Tracing that directly is what makes exported
+        # outlines look faceted, so the glyphs are rendered onto a finer grid first; the
+        # raw model output is kept untouched as the source of record.
+        trace_input_dir_name = 'trace_regular'
+        trace_regular_dir = os.path.join(user_font_dir, trace_input_dir_name)
         try:
-            stabilize_strokes(flipped_result_dir, stable_result_dir)
-            print(f"[DEBUG] Stabilized glyph images to {stable_result_dir}")
+            prepare_trace_images(flipped_result_dir, trace_regular_dir)
+            print(f"[DEBUG] Prepared high-resolution trace images for {trace_input_dir_name}")
         except Exception as e:
-            stable_result_dir = flipped_result_dir
-            stable_input_dir_name = 'flipped_result'
-            print(f"[WARN] stroke stabilizer skipped, using raw glyphs: {e}")
+            trace_input_dir_name = 'flipped_result'
+            trace_regular_dir = flipped_result_dir
+            print(f"[WARN] trace image prep skipped, using raw glyphs: {e}")
 
-        generate_ttf_js = os.path.join(settings.BASE_DIR, 'generateTTF.js')
+        shared_fit = {}
 
         def build_weight(input_dir_name, font_basename, weight_label):
-            subprocess.run(
-                ['node', generate_ttf_js, str(font_id), input_dir_name, font_basename],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,
-            )
-            src = os.path.join(user_font_dir, 'ttf_fonts', f'{font_basename}.ttf')
-            if not os.path.exists(src):
-                raise FileNotFoundError(f"TTF generation failed: {src} does not exist.")
             final_name = f'{font_basename}.ttf'
             final_path = os.path.join(TTF_OUTPUT_DIR, final_name)
-            shutil.move(src, final_path)
-            # Give the traced Latin/symbol glyphs real metrics (baseline + proportional
-            # spacing). Best-effort: Korean is untouched and the font is already valid, so a
-            # refine failure must never lose the font.
+            _vectorize(os.path.join(user_font_dir, input_dir_name), final_path,
+                       font_basename, font_id)
+            # Fit the outlines: Hangul gets sized and spaced, Latin/symbols get a baseline
+            # and proportional advances. Best-effort — the font is already valid at this
+            # point, so a refine failure must never lose it.
             try:
-                refine_metrics(final_path)
+                # Measured once, on Regular, and reused by Light/Bold: a weight that fits
+                # itself reads its own thinner strokes as a smaller script and grows to
+                # compensate, which would leave the family's weights at different sizes.
+                if not shared_fit:
+                    shared_fit.update(measure_fit(final_path))
+                    _save_fit(user_font_dir, shared_fit)
+                refine_metrics(final_path, fit=shared_fit)
             except Exception as e:
                 print(f"[WARN] metrics refine skipped for {final_name}: {e}")
             apply_metadata(final_path, DEFAULT_FONT_NAME, user_id=str(font_id),
                            weight=weight_label)
             return final_name
 
-        # 2) Regular TTF — the primary result. It is built from the stabilized trace
+        # 2) Regular TTF — the primary result. It is built from the prepared trace
         #    input, while the raw generated PNGs remain available for comparison.
-        reg_name = build_weight(stable_input_dir_name, f'user_font_{font_id}', 'Regular')
+        reg_name = build_weight(trace_input_dir_name, f'user_font_{font_id}', 'Regular')
         user_data = UserData.objects.get(id=font_id)
         user_data.ttf_file.name = os.path.join('ttf_files', reg_name)
         user_data.ttf_file_light = None
@@ -395,9 +435,10 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
         # 3) Synthetic Light weight — best effort. This uses the same source as Regular,
         #    then thins strokes before vector tracing and saves as a real 300-weight TTF.
         try:
-            light_dir = os.path.join(user_font_dir, 'flipped_result_light')
-            make_weight_variant(stable_result_dir, light_dir, weight='light')
-            light_name = build_weight('flipped_result_light', f'user_font_{font_id}_Light', 'Light')
+            light_dir = os.path.join(user_font_dir, 'trace_light')
+            make_weight_variant(trace_regular_dir, light_dir, weight='light',
+                                amount=AUTO_LIGHT_AMOUNT)
+            light_name = build_weight('trace_light', f'user_font_{font_id}_Light', 'Light')
             user_data.ttf_file_light.name = os.path.join('ttf_files', light_name)
             user_data.save()
             print(f"[DONE] font_id={font_id} Light generated -> {light_name}")
@@ -407,9 +448,10 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
         # 4) Synthetic Bold weight — best effort. A failure here must not lose the Regular
         #    font, so it's isolated and only saved on success.
         try:
-            bold_dir = os.path.join(user_font_dir, 'flipped_result_bold')
-            make_weight_variant(stable_result_dir, bold_dir, weight='bold')
-            bold_name = build_weight('flipped_result_bold', f'user_font_{font_id}_Bold', 'Bold')
+            bold_dir = os.path.join(user_font_dir, 'trace_bold')
+            make_weight_variant(trace_regular_dir, bold_dir, weight='bold',
+                                amount=AUTO_BOLD_AMOUNT)
+            bold_name = build_weight('trace_bold', f'user_font_{font_id}_Bold', 'Bold')
             user_data.ttf_file_bold.name = os.path.join('ttf_files', bold_name)
             user_data.save()
             print(f"[DONE] font_id={font_id} Bold generated -> {bold_name}")
@@ -439,7 +481,9 @@ def learning(request):
 
         # Fast (~2,350 common Hangul) vs Full (11,172) generation.
         charset_path = FULL_CHARSET if request.POST.get('speed') == 'full' else DEFAULT_CHARSET
-        device_name = 'mps' if request.POST.get('accelerator') == 'mps' else 'cpu'
+        # 'auto' uses the GPU when there is one; fp32 there is glyph-for-glyph identical
+        # to CPU and 4x faster (see inference.get_device). 'cpu' stays available.
+        device_name = 'cpu' if request.POST.get('accelerator') == 'cpu' else 'auto'
 
         # Each upload starts a brand-new font for this user; the pipeline fills in the
         # TTF on this exact row, so a user's fonts never overwrite one another.

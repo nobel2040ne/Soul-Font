@@ -19,17 +19,30 @@ from datasets.style_image_dataset import StyleImageDataset
 
 
 def get_device(requested=None):
-    """Pick inference device.
+    """Pick inference device. Defaults to the GPU when there is one.
 
-    The HAI/DMFont web path runs on CPU. Keep CPU as the default here too because
-    MPS/CUDA autocast can write valid-looking files with corrupted glyph content.
-    Set SOUL_FONT_DEVICE=cuda or SOUL_FONT_DEVICE=mps only for explicit testing.
+    This used to default to CPU on the grounds that "MPS/CUDA can write valid-looking
+    files with corrupted glyph content". Measured on the full 2,350-syllable charset
+    (M1 Pro), that is true of fp16 autocast, not of the GPU: at fp32 MPS is 4.25x
+    faster than CPU and every glyph comes out identical (max |difference| 2.5e-4 on a
+    [-1, 1] output, 0/2350 glyphs differ after thresholding). See _autocast below for
+    the half-precision half of that finding.
+
+    The finished TTF is not quite byte-identical: the vectorizer traces the grey image,
+    where 2.5e-4 can still move a contour crossing, so ~1.5% of glyphs gain or lose a
+    point. Two CPU runs are byte-identical, so SOUL_FONT_DEVICE=cpu is the setting for
+    reproducible output; it also forces the old behaviour outright.
+
+    CUDA stays opt-in rather than part of "auto": the equivalence above was measured on
+    Metal, and no CUDA machine was available to repeat it on.
     """
-    requested = (requested or os.environ.get("SOUL_FONT_DEVICE", "cpu")).lower()
+    requested = (requested or os.environ.get("SOUL_FONT_DEVICE", "auto")).lower()
+    if requested == "cpu":
+        return torch.device("cpu")
     if requested == "cuda" and torch.cuda.is_available():
         return torch.device("cuda")
     if (
-        requested == "mps" and
+        requested in ("mps", "auto") and
         getattr(torch.backends, "mps", None) is not None and
         torch.backends.mps.is_available()
     ):
@@ -125,7 +138,15 @@ def get_val_encode_loader(data, font_name, encode_chars, language, transform, B=
 
 
 def _autocast(device, use_amp=True):
-    """fp16 autocast on GPU/MPS (big speedup on Apple Silicon); no-op on CPU."""
+    """fp16 autocast on GPU; no-op on CPU.
+
+    Refused on MPS: it is a further 1.5x faster than fp32 there, but measured against a
+    CPU reference it corrupted all 400 glyphs in the probe (mean |difference| 0.13 on a
+    [-1, 1] output) — the model's component memory accumulates over 28 style images and
+    half precision loses the small contributions. Set SOUL_FONT_FORCE_AMP=1 to override.
+    """
+    if use_amp and device.type == "mps" and os.environ.get("SOUL_FONT_FORCE_AMP") != "1":
+        return contextlib.nullcontext()
     if use_amp and device.type in ("cuda", "mps"):
         return torch.autocast(device_type=device.type, dtype=torch.float16)
     return contextlib.nullcontext()
@@ -216,7 +237,7 @@ def main(config, checkpoint, save_dir, device_name=None, use_amp=None):
     )
 
     if use_amp is None:
-        use_amp = os.environ.get("SOUL_FONT_USE_AMP") == "1"
+        use_amp = os.environ.get("SOUL_FONT_FORCE_AMP") == "1"
     with _INFER_LOCK, torch.inference_mode():
         try:
             outs = infer_2stage(gen, encode_loader, decode_loader, device, use_amp=use_amp)
