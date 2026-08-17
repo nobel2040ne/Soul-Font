@@ -1,0 +1,144 @@
+{% extends 'pybo/base.html' %}
+{% load static %}
+
+{% block title %}Create Your Font{% endblock %}
+
+{% block head_extra %}
+<style>
+
+    .steps2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    @media (max-width: 600px) { .steps2 { grid-template-columns: 1fr; } }
+    .step-box { border: 1px solid #000; padding: 16px 14px 14px; }
+    .step-box h3 { margin: 0 0 8px; line-height: 1.2; }
+    .step-box p { margin: 0 0 11px; font-size: var(--ui-sm); }
+    .speed { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+    @media (max-width: 600px) { .speed { grid-template-columns: 1fr; } }
+    .speed label { border: 1px solid #000; padding: 12px 14px; cursor: pointer; display: block; min-height: 56px; }
+    .speed label.sel { box-shadow: 0 0 0 2px #000 inset; }
+    .speed .name { font-weight: bold; }
+    .speed .desc { font-size: var(--ui-xs); }
+    .tip { border: 1px solid #000; background: #f3f3f3; padding: 10px 12px 10px; font-size: var(--ui-sm); line-height: 1.6; margin-top: 10px; }
+    .tip .tip-title { font-weight: bold; cursor: pointer; list-style: none; }
+    .tip .tip-title::-webkit-details-marker { display: none; }
+    .tip .tip-title::before { content: "▸ "; }
+    .tip[open] .tip-title::before { content: "▾ "; }
+    .tip ul { margin: 6px 0 0; padding-left: 18px; }
+    .tip li { margin: 2px 0; }
+    .tip b { white-space: nowrap; }
+  
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="app">
+    <div class="window app-window">
+      <div class="title-bar">
+        <span class="close" aria-hidden="true"></span>
+        <h1 class="title">Create Your Font</h1>
+      </div>
+      <div class="separator"></div>
+
+      <div class="window-pane">
+        <h2 class="page-title">Create Your Own Font</h2>
+        <p class="lede">Download the template, write it by hand, then upload the PDF.</p>
+
+        {% comment %}
+        Collapsed by default. The two steps below say what to do; this is the detail you
+        only want the first time, and it was competing with them for attention.
+        {% endcomment %}
+        <details class="tip">
+          <summary class="tip-title">Tips for the best results</summary>
+          <ul>
+            <li>Write with <b>smooth, steady strokes</b>. Cleaner handwriting traces into a cleaner font.</li>
+            <li><b>English and symbols</b> are traced straight from your writing, so take extra care there.</li>
+            <li>On a tablet, import the PDF into your notes app, draw in each cell, and upload the export.</li>
+          </ul>
+        </details>
+
+        <form id="fontForm" action="{% url 'learning' %}" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="steps2">
+            <div class="step-box">
+              <h3>Step 1. Download template</h3>
+              <p>Print all pages (Korean samples plus English and symbols) and write each cell, or fill it in on a tablet.</p>
+              <a class="btn block" href="{% url 'download_template' %}?file=28_template.pdf">Get Template (PDF)</a>
+            </div>
+            <div class="step-box">
+              <h3>Step 2. Upload your PDF</h3>
+              <p>Upload your filled handwriting PDF.</p>
+              <div class="file-picker">
+                <input id="template" class="file-picker-input" type="file" name="template" accept="application/pdf">
+                <label class="file-picker-button" for="template">
+                  <span class="file-picker-icon" aria-hidden="true"></span>
+                  Select PDF
+                </label>
+                <span class="file-picker-name" data-empty="No PDF selected">No PDF selected</span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <h3 style="margin:0 0 8px;">Generation speed</h3>
+          <div class="speed">
+            <label class="sel" id="lbl-fast">
+              <input type="radio" name="speed" value="fast" checked>
+              <span class="name">Fast (recommended)</span>
+              <div class="desc">~2,350 common letters. Covers everyday text, much faster.</div>
+            </label>
+            <label id="lbl-full">
+              <input type="radio" name="speed" value="full">
+              <span class="name">Full</span>
+              <div class="desc">All 11,172 syllables. Complete coverage, slower.</div>
+            </label>
+          </div>
+
+          <h3 style="margin:14px 0 8px;">Compute</h3>
+          <div class="speed">
+            <label class="sel" id="lbl-mps">
+              <input type="radio" name="accelerator" value="auto" checked>
+              <span class="name">GPU</span>
+              <div class="desc">About 4× faster. Produces the same glyphs as CPU.</div>
+            </label>
+            <label id="lbl-cpu">
+              <input type="radio" name="accelerator" value="cpu">
+              <span class="name">CPU</span>
+              <div class="desc">Used automatically if no GPU is available.</div>
+            </label>
+          </div>
+
+          <div class="right-row">
+            <button type="submit" class="btn default">Create Font</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    var lf = document.getElementById('lbl-fast'), lu = document.getElementById('lbl-full');
+    document.querySelectorAll('input[name=speed]').forEach(function (r) {
+      r.addEventListener('change', function () {
+        lf.classList.toggle('sel', lf.querySelector('input').checked);
+        lu.classList.toggle('sel', lu.querySelector('input').checked);
+      });
+    });
+    var lc = document.getElementById('lbl-cpu'), lm = document.getElementById('lbl-mps');
+    document.querySelectorAll('input[name=accelerator]').forEach(function (r) {
+      r.addEventListener('change', function () {
+        lc.classList.toggle('sel', lc.querySelector('input').checked);
+        lm.classList.toggle('sel', lm.querySelector('input').checked);
+      });
+    });
+    document.getElementById('fontForm').addEventListener('submit', function (e) {
+      var f = document.getElementById('template');
+      if (!f.files || !f.files.length) { e.preventDefault(); alert('Please upload your PDF template.'); }
+      else if (!f.files[0].name.toLowerCase().endsWith('.pdf')) { e.preventDefault(); alert('Only PDF files are allowed.'); }
+    });
+  </script>
+{% endblock %}

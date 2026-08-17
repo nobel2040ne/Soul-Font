@@ -1,0 +1,71 @@
+{% extends 'pybo/base.html' %}
+{% load static %}
+
+{% block title %}About{% endblock %}
+
+{% block head_extra %}
+<style>
+
+    /* keep h2 section titles in the classic heading font; everything else uses the
+       same Inconsolata body stack (from .window-pane) at one consistent size. */
+    .steps,
+    .tech,
+    p.muted { font-family: inherit; font-size: var(--ui-sm); line-height: 1.6; }
+    /* Markers sit inside so each item starts flush with the paragraphs around it. With
+       the default outside marker the list was indented 20px and nothing lined up. */
+    .steps { margin: 6px 0 0; padding-left: 0; list-style-position: inside; }
+    .steps li { margin: 4px 0; }
+  
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="app">
+    <div class="window app-window">
+      <div class="title-bar">
+        <span class="close" aria-hidden="true"></span>
+        <h1 class="title">About SoulFont</h1>
+      </div>
+      <div class="separator"></div>
+
+      <div class="window-pane">
+        <h2 class="page-title">What is SoulFont?</h2>
+        <p class="lede">
+          SoulFont turns your handwriting into a real, installable font. Fill in a short
+          template by hand, upload it, and an AI model reconstructs every Korean
+          syllable in your style, then packages it as a TTF you can use anywhere.
+        </p>
+
+        <h2 class="page-title">How it works</h2>
+        <ol class="steps">
+          <li>Download the handwriting template and write the sample characters.</li>
+          <li>Upload the filled PDF. We crop and clean each cell automatically.</li>
+          <li>A memory-augmented neural network generates the full character set from your few samples.</li>
+          <li>Generated glyphs (plus your traced English &amp; symbols) are assembled into a TTF, with your own font metadata.</li>
+        </ol>
+
+        <hr class="divider">
+
+        {% comment %}
+        "The people" and "Built with" were two headed sections plus two dividers for three
+        sentences between them. One section, no extra rules.
+        {% endcomment %}
+        <h2 class="page-title">Credits</h2>
+        <p class="tech">
+          A project from SASA, Artificial Intelligence Project, by Jin Myung Lee and
+          Ji Hoo Lee. Built for learning, and for personal, non-commercial use.
+        </p>
+        <p class="tech">
+          Made with PyTorch (component-based handwriting model), Django, fontTools and
+          opentype tooling. Runs locally with Apple Silicon (MPS) acceleration.
+        </p>
+
+        <div class="right-row">
+          <button class="btn default" onclick="navigateWithFade('/create/')">Make your own</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+{% endblock %}

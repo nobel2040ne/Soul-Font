@@ -14,14 +14,35 @@ Watch the demo video: https://www.youtube.com/watch?v=X25yWyhzacM
 
 ## What is in this repository
 
-- `proj01/` - main Django project and app.
-- `proj01/pybo/` - web views, forms, models, templates, and routes.
-- `proj01/font_processor.py` - PDF-to-glyph preprocessing and inference pipeline.
-- `proj01/inference.py` - model loading and glyph image generation.
-- `proj01/glyph_vectorizer.py` - contour tracing and TTF construction.
-- `proj01/refine_metrics.py` - typographic fitting (sizes, spacing, baseline).
-- `proj01/generateTTF.js` - legacy Node tracer, kept as a fallback.
-- `proj01/data/charset/` - Korean target character sets.
+```text
+soulfont/
+  manage.py
+  config/       Django settings, root urls, wsgi/asgi
+  pybo/         the web app: views, forms, models, templates, routes
+  foundry/      the font pipeline, in the order it runs
+                  char_layout.py        where each glyph sits in the template
+                  font_processor.py     PDF to cleaned glyph rasters, weight variants
+                  inference.py          runs the handwriting model
+                  glyph_vectorizer.py   rasters to Bezier outlines and a TTF
+                  refine_metrics.py     sizes, side bearings, baseline
+                  set_font_metadata.py  name/OS2 tables, so weights install as one family
+                  generateTTF.js        legacy Node tracer, kept as a fallback
+                  crop.py               splits a filled template into cells
+  dmfont/       upstream DM-Font training code (not used by the web app)
+  models/ datasets/ utils/ meta/
+                vendored DM-Font model packages, left flat because their own
+                imports expect them at the project root
+  workdir/      everything the pipeline generates, one folder per concern
+                  crops/<name>/     cells cut out of the uploaded template
+                  glyphs/<name>/    what the model drew
+                  fonts/<id>/       per-upload build directory
+                  configs/<name>.yaml
+  data/charset/ Korean target character sets
+  static/ media/ checkpoints/ uploads/
+```
+
+`workdir/` is entirely generated and gitignored; deleting it costs nothing but a
+regeneration. Everything outside it is source.
 - `requirements.txt` - compact ML/font-processing dependency list.
 - `requirments_d.txt` - full pinned dependency list used by the Django app. The filename is intentionally referenced as it exists in the repo.
 
@@ -41,20 +62,20 @@ brew install poppler
 
 ## Required model checkpoint (the one manual download)
 
-The handwriting template (`proj01/static/templates/28_template.pdf`) and the default
-font (`proj01/media/ttf_files/MaruBuri-Regular.ttf`) are already included in the repo,
+The handwriting template (`soulfont/static/templates/28_template.pdf`) and the default
+font (`soulfont/media/ttf_files/MaruBuri-Regular.ttf`) are already included in the repo,
 so the **only** asset you must download yourself is the model checkpoint (it is too
 large to track in Git):
 
 1. Open the DM-Font v1.0.0 release: https://github.com/clovaai/dmfont/releases/tag/v1.0.0
 2. Download the pretrained Korean generator weights.
-3. Save the file as `proj01/checkpoints/korean-handwriting.pth` (create the
-   `proj01/checkpoints/` folder and rename the downloaded file to that exact name).
+3. Save the file as `soulfont/checkpoints/korean-handwriting.pth` (create the
+   `soulfont/checkpoints/` folder and rename the downloaded file to that exact name).
 
 Without this file the web app still runs, but font generation will fail at the
 inference step. The app creates the runtime directories it needs
-(`proj01/uploads/`, `proj01/FONT/`, `proj01/style/`, `proj01/static/outputs/`, and
-additional files under `proj01/media/`) automatically as fonts are generated.
+(`soulfont/uploads/`, `soulfont/workdir/`, and additional files under
+`soulfont/media/`) automatically as fonts are generated.
 
 ## Setup
 
@@ -71,7 +92,7 @@ Optional — the Node dependencies are only needed for the legacy tracer
 (`SOULFONT_VECTORIZER=imagetracer`):
 
 ```bash
-cd proj01
+cd soulfont
 npm install
 cd ..
 ```
@@ -79,7 +100,7 @@ cd ..
 Initialize the Django database:
 
 ```bash
-cd proj01
+cd soulfont
 python manage.py migrate
 ```
 
@@ -91,7 +112,7 @@ python manage.py createsuperuser
 
 ## Run the development server
 
-From `proj01/` with the virtual environment activated:
+From `soulfont/` with the virtual environment activated:
 
 ```bash
 python manage.py runserver
@@ -125,8 +146,8 @@ Useful routes:
 The web pipeline calls:
 
 ```text
-FontStyleProcessor -> inference.py -> prepare_trace_images -> glyph_vectorizer.py
-                   -> refine_metrics.py -> set_font_metadata.py
+FontStyleProcessor -> foundry/inference.py -> prepare_trace_images
+                   -> foundry/glyph_vectorizer.py -> refine_metrics.py -> set_font_metadata.py
 ```
 
 - `prepare_trace_images` (in `font_processor.py`) cleans the rasters: it closes the
@@ -141,12 +162,12 @@ FontStyleProcessor -> inference.py -> prepare_trace_images -> glyph_vectorizer.p
   that worse (blurring a distance field thins convex places and thickens concave ones). The
   step smooths the distance field's ridge *along* the stroke, so width evens out while every
   place the pen went stays put. `STROKE_EVENNESS` controls it; 0 turns it off.
-- `glyph_vectorizer.py` traces them: sub-pixel marching-squares contours, shrink-free
+- `foundry/glyph_vectorizer.py` traces them: sub-pixel marching-squares contours, shrink-free
   Taubin smoothing, corner detection, and least-squares quadratic Bézier fitting, assembled
   into a TTF with fontTools. About 40% of its points are on-curve, matching commercial
   Korean fonts; the previous tracer emitted 87% straight segments, which is what made
   exported outlines look faceted.
-- `refine_metrics.py` fits the outlines into the em: Hangul gets a shared size and
+- `foundry/refine_metrics.py` fits the outlines into the em: Hangul gets a shared size and
   proportional advances, Latin a real cap height and baseline, plus the space glyph.
 
 Each upload produces three TTFs — Light (300), Regular (400), Bold (700). The two extra
@@ -194,15 +215,15 @@ Optional tuning:
 Training entry point:
 
 ```bash
-cd proj01
-python train.py <run-name> <config.yaml>
+cd soulfont
+python dmfont/train.py <run-name> <config.yaml>
 ```
 
 Inference entry point:
 
 ```bash
-cd proj01
-python inference.py <config.yaml> checkpoints/korean-handwriting.pth static/outputs/manual_run
+cd soulfont
+python foundry/inference.py <config.yaml> checkpoints/korean-handwriting.pth workdir/glyphs/manual_run
 ```
 
 The inference config must include style image paths, style characters, target characters, architecture settings, and `language: kor`.
@@ -211,9 +232,9 @@ The inference config must include style image paths, style characters, target ch
 
 - `ModuleNotFoundError: django`: install the full dependency file with `python -m pip install -r requirments_d.txt`.
 - `pdf2image` or PDF conversion errors: install Poppler and make sure it is available on your `PATH`.
-- Missing checkpoint errors: place `korean-handwriting.pth` in `proj01/checkpoints/`.
-- `SOULFONT_VECTORIZER=imagetracer` errors: that fallback path needs the Node modules, so run `npm install` inside `proj01/`. The default vectorizer is pure Python and needs none of them.
-- Generated font is missing: check the Django server logs; generation runs in a background thread and writes intermediate files under `proj01/FONT/<user_id>/`, `proj01/style/`, and `proj01/static/outputs/`.
+- Missing checkpoint errors: place `korean-handwriting.pth` in `soulfont/checkpoints/`.
+- `SOULFONT_VECTORIZER=imagetracer` errors: that fallback path needs the Node modules, so run `npm install` inside `soulfont/`. The default vectorizer is pure Python and needs none of them.
+- Generated font is missing: check the Django server logs; generation runs in a background thread and writes intermediate files under `soulfont/workdir/`.
 
 ## If the working copy lives in iCloud Drive
 
@@ -222,24 +243,19 @@ runs behind it can reach ~950,000 files against 679 tracked by Git. iCloud Drive
 keep pace with that and resolves the race by leaving conflict copies — `views 2.py`,
 `retro 3.css` — scattered through the tree.
 
-The fix is to keep the generated trees outside iCloud entirely. On this machine they live
-under `~/Library/Application Support/soulfont/` and are symlinked back into the repo, so
-every path in the code still resolves:
+`.gitignore` drops any `name 2.ext` conflict copy so one can never be committed, but they
+still accumulate on disk. To clear them:
 
-```text
-proj01/FONT           -> ~/Library/Application Support/soulfont/FONT
-proj01/static/outputs -> ~/Library/Application Support/soulfont/outputs
-proj01/node_modules   -> ~/Library/Application Support/soulfont/node_modules
-venvproj01            -> ~/Library/Application Support/soulfont/venvproj01
+```bash
+find . -path ./.git -prune -o -print | grep -E ' [0-9]+(\.[A-Za-z0-9]+)?$' | xargs -d'\n' rm -rf
 ```
 
-That takes the tree from ~955,000 synced files to ~2,800. The symlinks are ignored, so a
-fresh clone just creates ordinary directories and needs none of this. `.gitignore` also
-drops any `name 2.ext` conflict copy, so one can never be committed by accident.
+That deletes by filename alone, so check the list before piping it to `rm` — a real file
+with a space before its extension would match too.
 
-Move them with a single `mv` per directory. Each `mv` pays a fixed ~40s round-trip to
-`fileproviderd` regardless of size, so one call per tree is fast (776,000 files took 148s)
-while a per-file loop would not finish.
+To stop them happening at all, the working tree has to sit outside iCloud: move the repo
+somewhere unsynced, or turn off Desktop & Documents Folders sync. Relocating just the four
+generated directories and symlinking them back works, but leaves link icons in Finder.
 
 ## Development notes
 

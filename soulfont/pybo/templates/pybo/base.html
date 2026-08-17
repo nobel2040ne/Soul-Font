@@ -1,0 +1,36 @@
+{% load static %}<!DOCTYPE html>
+{% comment %}
+Shared page skeleton. Every page used to carry its own copy of this, which is how the
+boilerplate drifted apart — three spellings of charset, two doctypes and a stray
+?v= cache-buster on one stylesheet link.
+
+Blocks:
+  title       page title, before the " | SoulFont" suffix
+  head_extra  page-specific <style> or <link>
+  body_class  defaults to "desktop"; override only if a page needs a different ground
+  content     everything inside <body> after the menu bar
+  scripts     page-specific <script>, after retro.js
+{% endcomment %}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SoulFont{% endblock %} | SoulFont</title>
+  {% comment %}
+  Vendored rather than loaded from unpkg: .close and .separator have no local styles,
+  so the whole window chrome used to depend on a third party being reachable.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'vendor/system/system.css' %}">
+  <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/retro.css' %}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}desktop{% endblock %}">
+  {% include 'pybo/_menubar.html' %}
+
+  {% block content %}{% endblock %}
+
+  <script src="{% static 'js/retro.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

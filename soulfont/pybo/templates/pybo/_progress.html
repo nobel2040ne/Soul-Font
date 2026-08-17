@@ -1,0 +1,47 @@
+{% comment %}
+Generation progress. Included by result.html and user_page.html.
+Renders nothing once the font is done, so finished pages are unaffected.
+Expects `user_data` in context.
+{% endcomment %}
+{% if user_data.status == 'failed' %}
+  <div class="gen-box gen-failed" role="alert">
+    <h3>Generation failed</h3>
+    <p class="gen-stage">{{ user_data.status_error|default:"Something went wrong while building your font." }}</p>
+    <a class="btn default" href="{% url 'create_font' %}">Try again</a>
+  </div>
+{% elif user_data.status != 'done' %}
+  <div class="gen-box" id="genBox" data-status-url="{% url 'font_status' user_data.id %}"
+       role="status" aria-live="polite">
+    <h3>Building your font</h3>
+    <p class="gen-stage" id="genStage">{{ user_data.status_stage|default:"Queued" }}</p>
+    <div class="gen-bar"><div class="gen-bar-fill" id="genFill"
+         style="width: {{ user_data.status_percent }}%"></div></div>
+    <p class="hint">About two minutes. You can leave and come back.</p>
+  </div>
+  <script>
+    (function () {
+      var box = document.getElementById('genBox');
+      if (!box) return;
+      var stage = document.getElementById('genStage');
+      var fill = document.getElementById('genFill');
+
+      function poll() {
+        fetch(box.dataset.statusUrl, { headers: { 'Accept': 'application/json' } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            stage.textContent = d.stage || 'Working…';
+            fill.style.width = (d.percent || 0) + '%';
+            // Reload rather than swapping the face in place: the finished page differs in
+            // more than the type — download button, weight count, details panel.
+            if (d.status === 'done' || d.status === 'failed') {
+              window.location.reload();
+              return;
+            }
+            setTimeout(poll, 3000);
+          })
+          .catch(function () { setTimeout(poll, 6000); });  // transient failure: back off, keep going
+      }
+      setTimeout(poll, 3000);
+    })();
+  </script>
+{% endif %}

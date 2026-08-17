@@ -1,0 +1,26 @@
+{% extends 'pybo/base.html' %}
+{% load static %}
+
+{% block title %}Password Reset{% endblock %}
+
+{% block content %}
+  <div class="app">
+    <div class="window app-window narrow">
+      <div class="title-bar">
+        <span class="close" aria-hidden="true"></span>
+        <h1 class="title">Password Reset</h1>
+      </div>
+      <div class="separator"></div>
+
+      <div class="window-pane" style="text-align:center;">
+        <h2 class="page-title">Sorry!</h2>
+        <p class="lede">Password reset is not supported yet.</p>
+        <div class="center-row">
+          <button class="btn default" onclick="navigateWithFade('{% url 'login' %}')">Back to Log In</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'pybo/base.html' %}
+{% load static %}
+
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+  <div class="app">
+    <div class="window app-window narrow">
+      <div class="title-bar">
+        <span class="close" aria-hidden="true"></span>
+        <h1 class="title">Log In</h1>
+      </div>
+      <div class="separator"></div>
+
+      <div class="window-pane">
+        <h2 class="page-title">Sign in to SoulFont</h2>
+        <p class="lede">Feel Your Font.</p>
+
+        {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+
+        <form method="POST">
+          {% csrf_token %}
+          <div class="field-col">
+            <label for="username">Username or email</label>
+            <input class="w100" id="username" type="text" name="username" placeholder="soulsoul" required>
+          </div>
+          <div class="field-col">
+            <label for="password">Password</label>
+            <input class="w100" id="password" type="password" name="password" placeholder="••••••••" required>
+          </div>
+          <div class="right-row">
+            <a class="btn" href="{% url 'pw_reset' %}">Forgot?</a>
+            <button type="submit" class="btn default">Log In</button>
+          </div>
+        </form>
+
+        <hr class="divider">
+        <p class="muted">New here? <a href="{% url 'signup' %}">Create an account</a></p>
+      </div>
+    </div>
+  </div>
+
+  
+{% endblock %}

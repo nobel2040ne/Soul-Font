@@ -6,12 +6,6 @@
 # duplicates. No source file here legitimately has a space before its extension.
 * [0-9].*
 * [0-9]
-# The churn-heavy directories live outside iCloud (~/Library/Application Support/soulfont)
-# and are symlinked back in under these names; a fresh clone just makes real directories.
-/venvproj01
-/proj01/node_modules
-/proj01/FONT
-/proj01/static/outputs
 
 # ---- Python ----
 __pycache__/
@@ -25,9 +19,8 @@ dist/
 .eggs/
 
 # ---- Virtual environments ----
-venvproj01/
-venv/
 .venv/
+venv/
 env/
 ENV/
 
@@ -41,7 +34,7 @@ yarn-error.log*
 *.log
 db.sqlite3
 db.sqlite3-journal
-/proj01/staticfiles/
+/soulfont/staticfiles/
 local_settings.py
 
 # ---- Secrets / env ----
@@ -49,16 +42,15 @@ local_settings.py
 *.env
 
 # ---- Large data / model / media assets (not version-controlled) ----
-proj01/FONT/
-proj01/media/*
+soulfont/media/*
 # ...but keep the bundled default font the app ships with.
-!proj01/media/ttf_files/
-proj01/media/ttf_files/*
-!proj01/media/ttf_files/MaruBuri-Regular.ttf
-proj01/uploads/
-proj01/checkpoints/
-# Per-upload crops the pipeline writes; proj01/style/crop.py itself is source.
-proj01/style/user_*/
+!soulfont/media/ttf_files/
+soulfont/media/ttf_files/*
+!soulfont/media/ttf_files/MaruBuri-Regular.ttf
+soulfont/uploads/
+soulfont/checkpoints/
+# Everything the pipeline generates per upload now lives under one parent.
+soulfont/workdir/
 
 # Generated raster outputs
 *.png
