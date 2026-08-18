@@ -3,28 +3,15 @@
 
 {% block title %}About{% endblock %}
 
-{% block head_extra %}
-<style>
-
-    /* keep h2 section titles in the classic heading font; everything else uses the
-       same Inconsolata body stack (from .window-pane) at one consistent size. */
-    .steps,
-    .tech,
-    p.muted { font-family: inherit; font-size: var(--ui-sm); line-height: 1.6; }
-    /* Markers sit inside so each item starts flush with the paragraphs around it. With
-       the default outside marker the list was indented 20px and nothing lined up. */
-    .steps { margin: 6px 0 0; padding-left: 0; list-style-position: inside; }
-    .steps li { margin: 4px 0; }
-  
-</style>
-{% endblock %}
+{% block app_name %}About{% endblock %}
 
 {% block content %}
   <div class="app">
-    <div class="window app-window">
+    <div data-drag class="window app-window">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
-        <h1 class="title">About SoulFont</h1>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
+        <h1 class="title">About</h1>
+        <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
 
@@ -59,10 +46,6 @@
           Made with PyTorch (component-based handwriting model), Django, fontTools and
           opentype tooling. Runs locally with Apple Silicon (MPS) acceleration.
         </p>
-
-        <div class="right-row">
-          <button class="btn default" onclick="navigateWithFade('/create/')">Make your own</button>
-        </div>
       </div>
     </div>
   </div>

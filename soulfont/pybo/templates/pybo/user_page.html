@@ -1,12 +1,12 @@
 {% extends 'pybo/base.html' %}
 {% load static %}
 
-{% block title %}{{ profile_user.username }}{% endblock %}
+{% block title %}{{ font_name }}{% endblock %}
+
+{% block app_name %}My Fonts{% endblock %}
 
 {% block head_extra %}
 <style>
-
-    {# Only once generation is done — before that ttf_file is still the bundled MaruBuri. #}
     {% if user_data.is_ready %}
       {% if ttf_file_light %}
       @font-face { font-family: "SoulFont-{{ user_data.id }}"; src: url("{{ ttf_file_light.url }}") format("truetype"); font-weight: 300; }
@@ -15,227 +15,228 @@
       {% if ttf_file_bold %}
       @font-face { font-family: "SoulFont-{{ user_data.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
       {% endif %}
+    .tryout .tryout-stage .ts { font-family: "SoulFont-{{ user_data.id }}", 'Galmuri11', sans-serif; line-height: 1.4; }
     {% endif %}
-    /* font details — mirrors the .tryout box so the two read as sibling panels */
-    .meta { border: 1px solid #000; padding: 14px 16px 16px; margin: 18px 0; }
-    .meta .meta-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .meta .meta-head h3 { margin: 0; font-size: var(--ui-md); }
-    /* inline editor: the panel header is the toggle, so there is no separate Edit button */
-    .meta-edit > summary {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      cursor: pointer; list-style: none;
-    }
-    .meta-edit > summary::-webkit-details-marker { display: none; }
-    .meta-edit > summary h3 { margin: 0; font-size: var(--ui-md); display: inline; }
-    .meta-edit > summary .edit-hint { font-size: var(--ui-sm); text-decoration: underline; }
-    .meta-edit[open] > summary .edit-hint { text-decoration: none; opacity: .6; }
-    .meta-form { margin-top: 12px; }
-    .meta-form .field-col { margin-bottom: 8px; }
-    .meta-form .right-row { margin-top: 4px; }
-    .meta .hint { margin: 4px 0 10px; font-size: var(--ui-xs); color: #555; }
-    .meta-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #ccc; font-size: var(--ui-sm); }
-    .meta-row:last-child { border-bottom: 0; }
-    .meta-row .k { font-weight: bold; flex: 0 0 auto; }
-    .meta-row > span:last-child { text-align: right; word-break: break-word; }
-    .meta-row .unset { color: #888; font-style: italic; }
-    /* one prominent action, then a quiet row of everything else */
-    .primary-row { display: flex; margin: 14px 0 4px; }
-    .primary-row .btn { width: 100%; }
-    .secondary-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; }
-    .secondary-row form { margin: 0; display: inline-flex; }
-    .secondary-row .btn.sel { font-weight: bold; box-shadow: 0 0 0 2px #000 inset; }
-    .font-switch { max-width: 210px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-    /* try-it-out box */
-    .tryout { border: 1px solid #000; padding: 14px 16px 16px; margin: 18px 0; }
-    .tryout h3 { margin: 0 0 4px; font-size: var(--ui-md); }
-    .tryout .hint { margin: 0 0 10px; font-size: var(--ui-xs); color: #555; }
-    .tryout textarea.w100 { min-height: 64px; }
-    .tryout .tryout-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
-    .tryout .tryout-row label { font-size: var(--ui-sm); }
-    .tryout .tryout-size { flex: 1; min-width: 140px; }
-    .tryout .tryout-stage {
-      border: 1px solid #000; margin-top: 12px; padding: 22px 16px; min-height: 90px;
-      max-height: 240px; max-width: 100%; overflow: hidden;
-      display: flex; align-items: center; justify-content: center; text-align: center;
-      background: #fff;
-    }
-    .tryout .tryout-stage .ts { max-width: 100%; max-height: 100%; overflow: hidden; word-break: break-word; white-space: pre-wrap; }
-    {% if user_data.is_ready %}
-    .tryout .tryout-stage .ts { font-family: "SoulFont-{{ user_data.id }}", "Geneva", sans-serif; line-height: 1.4; }
-    {% endif %}
-  
-</style>
+  </style>
 {% endblock %}
 
 {% block content %}
+  {% comment %}
+  A font's window. The order follows what you came here to do: pick which font you are looking
+  at, look at it, take it away, then change what is written about it. The switcher used to sit
+  below a six-field form, so changing font meant scrolling past everything you were not after.
+  {% endcomment %}
   <div class="app">
-    <div class="window app-window narrow">
+    <div data-drag class="window app-window narrow">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
         <h1 class="title">{{ font_name }}</h1>
+        <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
 
-      <div class="window-pane">
-        {% comment %}
-        The title bar already names the font, so the pane does not repeat it — it used to
-        say the same words three times before the page had shown anything.
-        {% endcomment %}
-        <div class="profile-page-head">
-          {% if profile_image %}
-            <img class="profile-avatar" src="{{ profile_image.url }}" alt="{{ profile_user.username }} profile image">
-          {% else %}
-            <div class="profile-avatar">{{ profile_user.username|first|upper }}</div>
-          {% endif %}
-          <div class="profile-copy">
-            <div class="profile-name">@ {{ profile_user.username }}</div>
-          </div>
-        </div>
+      <div class="folder-info">
+        <span>@ {{ profile_user.username }}</span>
+        {% if is_owner %}<span>{{ user_fonts|length }} font{{ user_fonts|length|pluralize }}</span>{% endif %}
+        {% if user_data.is_ready %}<span class="fi-hint">{{ weight_count }} weight{{ weight_count|pluralize }}</span>{% endif %}
+      </div>
+      <div class="separator"></div>
 
+      {% if is_owner %}
+      {% comment %}
+      Navigation first. This list used to appear only once you had more than one font, so a new
+      user was never shown that a font is a thing you can own several of.
+      {% endcomment %}
+      <div class="listview" role="listbox" aria-label="Your fonts">
+        <div class="lv-head">
+          <span class="lv-pad" aria-hidden="true"></span>
+          <span class="lv-c-name">Name</span><span class="lv-c-w">Weights</span><span class="lv-c-h">Home</span>
+        </div>
+        {% for f in user_fonts %}
+          <a class="lv-row{% if f.id == user_data.id %} sel{% endif %}"
+             href="{% url 'user_page' f.id %}" role="option"
+             aria-selected="{% if f.id == user_data.id %}true{% else %}false{% endif %}">
+            <span class="tri" aria-hidden="true"></span>
+            <span class="lv-name">{{ f.font_name }}</span>
+            <span class="lv-w">{% if f.status != 'done' %}building{% elif f.ttf_file_light %}3{% elif f.ttf_file %}1{% else %}&mdash;{% endif %}</span>
+            <span class="lv-h">{% if f.show_on_home %}&#10003;{% endif %}</span>
+          </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="window-pane">
         {% include "pybo/_progress.html" %}
 
         {% comment %}
         The font itself is what this page is for, so it goes first and gets the room.
-        Everything else — actions, switcher, details — sits underneath it.
         {% endcomment %}
         {% if user_data.is_ready %}
         <div class="tryout">
-          <div class="tryout-stage"><div class="ts" id="tryStage" style="font-size: var(--spec-xl)">{{ quote|default:"안녕하세요" }}</div></div>
+          <div class="tryout-stage"><div class="ts" id="tryStage">{{ quote|default:"안녕하세요" }}</div></div>
+          <label class="sr-only" for="tryInput">Sample text</label>
           <textarea class="w100" id="tryInput" placeholder="Type to see it in your font…">{{ quote|default:"안녕하세요" }}</textarea>
           <div class="tryout-row">
             <label for="trySize">Size</label>
             <input class="tryout-size" id="trySize" type="range" min="20" max="96" value="48">
-            <label for="tryWeight">Weight</label>
-            <input class="tryout-size" id="tryWeight" type="range" min="300" max="700" step="100" value="400">
-            <a class="btn" href="{% url 'letter' %}?font={{ user_data.id }}">Write a letter</a>
+            <span class="seg" id="tryWeightSeg" role="group" aria-label="Weight">
+              {% if ttf_file_light %}<button class="btn" type="button" data-weight="300">Light</button>{% endif %}
+              <button class="btn sel" type="button" data-weight="400">Regular</button>
+              {% if ttf_file_bold %}<button class="btn" type="button" data-weight="700">Bold</button>{% endif %}
+            </span>
           </div>
         </div>
-        {% endif %}
 
-        {% comment %}
-        Downloading is why people come here, so it is the one prominent control and it sits
-        with the font it belongs to. Everything else is secondary and lives in the quiet row
-        at the bottom of the pane.
-        {% endcomment %}
-        {% if user_data.is_ready %}
         <div class="primary-row">
           <a class="btn default" href="{% url 'download_font' user_data.id %}">Download {{ font_name }}{% if weight_count > 1 %} ({{ weight_count }} weights){% endif %}</a>
         </div>
         {% endif %}
 
         {% comment %}
-        Edited in place. This used to navigate to a separate page, save, and redirect back
-        here, which meant leaving the font to change a line about it.
+        One panel. The details used to be rendered twice — a collapsed form, and a read-only
+        table under it listing the same six fields in a different order. A field showing its
+        current value is already the display, which is how Get Info worked, so the table is gone
+        and the form is simply open.
+
+        Name and Sample live here now too. The name is what the title bar, the download button
+        and the gallery card all show, and it was the one thing you could not change; the sample
+        is what the gallery card renders in your font. Both were editable only on a page that
+        nothing linked to.
         {% endcomment %}
         <div class="meta">
-          {% if is_owner %}
-          <details class="meta-edit"{% if request.GET.edit %} open{% endif %}>
-            <summary><h3>Font details</h3><span class="edit-hint">Edit</span></summary>
-            <form method="post" class="meta-form">
-              {% csrf_token %}
-              <div class="field-col">
-                <label for="m_author">Author</label>
-                <input class="w100" id="m_author" type="text" name="author" value="{{ user_data.author }}" placeholder="Your name">
-              </div>
-              <div class="field-col">
-                <label for="m_license_text">License</label>
-                <input class="w100" id="m_license_text" type="text" name="license_text" value="{{ user_data.license_text }}" placeholder="Personal and non-commercial use">
-              </div>
-              <div class="field-col">
-                <label for="m_license_url">License link</label>
-                <input class="w100" id="m_license_url" type="url" name="license_url" value="{{ user_data.license_url }}" placeholder="https://">
-              </div>
-              <div class="field-col">
-                <label for="m_copyright">Copyright</label>
-                <input class="w100" id="m_copyright" type="text" name="copyright" value="{{ user_data.copyright }}" placeholder="© {% now 'Y' %} Your name">
-              </div>
-              <div class="field-col">
-                <label for="m_description">Description</label>
-                <input class="w100" id="m_description" type="text" name="description" value="{{ user_data.description }}" placeholder="A custom handwriting font">
-              </div>
-              <div class="field-col">
-                <label for="m_version">Version</label>
-                <input class="w100" id="m_version" type="text" name="version" value="{{ user_data.version }}" placeholder="1.000">
-              </div>
-              <div class="right-row">
-                <button class="btn default" type="submit" name="save_metadata" value="1">Save into the font</button>
-              </div>
-            </form>
-          </details>
-          {% else %}
           <div class="meta-head"><h3>Font details</h3></div>
-          {% endif %}
+          {% if is_owner %}
+          <form method="post" class="meta-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="field-col">
+              <label for="m_font_name">Name</label>
+              <input class="w100" id="m_font_name" type="text" name="font_name" value="{{ user_data.font_name }}" placeholder="My Handwriting" required>
+            </div>
+            <div class="field-col">
+              <label for="m_quote">Sample shown on Home</label>
+              <input class="w100" id="m_quote" type="text" name="quote" value="{{ user_data.quote }}" placeholder="안녕하세요">
+            </div>
+            <div class="field-col">
+              <label for="m_author">Author</label>
+              <input class="w100" id="m_author" type="text" name="author" value="{{ user_data.author }}" placeholder="Your name">
+            </div>
+            <div class="field-col">
+              <label for="m_license_text">License</label>
+              <input class="w100" id="m_license_text" type="text" name="license_text" value="{{ user_data.license_text }}" placeholder="Personal and non-commercial use">
+            </div>
+            <div class="field-col">
+              <label for="m_license_url">License link</label>
+              <input class="w100" id="m_license_url" type="url" name="license_url" value="{{ user_data.license_url }}" placeholder="https://">
+            </div>
+            <div class="field-col">
+              <label for="m_copyright">Copyright</label>
+              <input class="w100" id="m_copyright" type="text" name="copyright" value="{{ user_data.copyright }}" placeholder="© {% now 'Y' %} Your name">
+            </div>
+            <div class="field-col">
+              <label for="m_description">Description</label>
+              <input class="w100" id="m_description" type="text" name="description" value="{{ user_data.description }}" placeholder="A custom handwriting font">
+            </div>
+            <div class="field-col">
+              <label for="m_version">Version</label>
+              <input class="w100" id="m_version" type="text" name="version" value="{{ user_data.version }}" placeholder="1.000">
+            </div>
 
+            <div class="field-col">
+              <span class="fc-label">Picture</span>
+              <div class="profile-editor">
+                {% if profile_image %}
+                  <img class="profile-avatar" src="{{ profile_image.url }}" alt="Picture for {{ font_name }}">
+                {% else %}
+                  <div class="profile-avatar">{{ profile_user.username|first|upper }}</div>
+                {% endif %}
+                <div class="stack">
+                  <div class="file-picker">
+                    <input id="m_profile_image" class="file-picker-input" type="file" name="profile_image" accept="image/*">
+                    <label class="file-picker-button" for="m_profile_image">
+                      <span class="file-picker-icon" aria-hidden="true"></span>
+                      Choose Picture
+                    </label>
+                    <span class="file-picker-name" data-empty="No picture chosen">No picture chosen</span>
+                  </div>
+                  {% if profile_image %}
+                    <label class="inline-check">
+                      <input type="checkbox" name="remove_profile_image" value="1">
+                      Remove the current picture
+                    </label>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <p class="hint">Author, licence and copyright are written into the font file itself, so they travel with it.</p>
+            <div class="right-row">
+              <button class="btn default" type="submit" name="save_metadata" value="1" data-busy-label="Saving…">Save</button>
+            </div>
+          </form>
+          {% else %}
+          {% comment %} A visitor cannot edit, so they get the values as text. {% endcomment %}
           {% if user_data.author %}<div class="meta-row"><span class="k">Author</span><span>{{ user_data.author }}</span></div>{% endif %}
           {% if user_data.version %}<div class="meta-row"><span class="k">Version</span><span>{{ user_data.version }}</span></div>{% endif %}
           {% if user_data.license_text %}<div class="meta-row"><span class="k">License</span><span>{{ user_data.license_text }}</span></div>{% endif %}
           {% if user_data.license_url %}<div class="meta-row"><span class="k">License link</span><span>{{ user_data.license_url }}</span></div>{% endif %}
           {% if user_data.copyright %}<div class="meta-row"><span class="k">Copyright</span><span>{{ user_data.copyright }}</span></div>{% endif %}
           {% if user_data.description %}<div class="meta-row"><span class="k">Description</span><span>{{ user_data.description }}</span></div>{% endif %}
-          {% if not user_data.author and not user_data.license_text and not user_data.copyright and not user_data.description %}
-            <p class="hint">Author, licence and copyright are saved into the font file. None set yet.</p>
           {% endif %}
         </div>
 
         {% if is_owner %}
         {% comment %}
-        Secondary actions, kept quiet and together. The font picker is a select rather than
-        one button per font — that row grew by one control for every font ever made. There
-        is no "Home" button here; the menu bar already has one.
+        Two controls, different in kind: one changes this font's state, the other exports a
+        separate file. "New Font" used to sit here as a third identical button, but creating is
+        not something you do to the font you are looking at — it is in the File menu and on the
+        desktop.
         {% endcomment %}
         <div class="secondary-row">
-          {% if user_fonts|length > 1 %}
-            <label class="sr-only" for="fontSwitch">Switch font</label>
-            <select id="fontSwitch" class="font-switch">
-              {% for f in user_fonts %}
-                <option value="{% url 'user_page' f.id %}" {% if f.id == user_data.id %}selected{% endif %}>
-                  {% if f.show_on_home %}★ {% endif %}{{ f.font_name }}
-                </option>
-              {% endfor %}
-            </select>
-          {% endif %}
-          <a class="btn" href="{% url 'font_editor' user_data.id %}">Adjust</a>
-          <a class="btn" href="{% url 'create_font' %}">New font</a>
           {% if user_data.show_on_home %}
-            <span class="btn sel" aria-disabled="true">★ On Home</span>
+            <span class="btn sel" aria-disabled="true">&#9733; On Home</span>
           {% else %}
             <form method="post">
               {% csrf_token %}
               <button class="btn" type="submit" name="set_home" value="1">Show on Home</button>
             </form>
           {% endif %}
+          {% comment %}
+          Named for what it does. It was called "Adjust", but the editor never writes back to
+          this font — it builds a separate file and hands you a download.
+          {% endcomment %}
+          <a class="btn" href="{% url 'font_editor' user_data.id %}">Export Adjusted Copy</a>
         </div>
         {% endif %}
       </div>
     </div>
   </div>
-
-  
 {% endblock %}
 
 {% block scripts %}
   <script>
     (function () {
-      var sw = document.getElementById('fontSwitch');
-      if (sw) sw.addEventListener('change', function () { window.location.href = sw.value; });
-    })();
-    (function () {
       var input = document.getElementById('tryInput');
       var stage = document.getElementById('tryStage');
       var size = document.getElementById('trySize');
-      var weight = document.getElementById('tryWeight');
+      var weightSeg = document.getElementById('tryWeightSeg');
       if (!input || !stage) return;
-      function render() {
-        stage.textContent = input.value || 'Type something…';
-      }
+
+      function render() { stage.textContent = input.value || 'Type something…'; }
       input.addEventListener('input', render);
-      if (size) size.addEventListener('input', function () {
-        stage.style.fontSize = size.value + 'px';
-      });
-      if (weight) weight.addEventListener('input', function () {
-        stage.style.fontWeight = weight.value;
+
+      // The stage used to carry an inline --spec-xl (48px) while the slider also said 48, but
+      // nothing tied them together, so the two could disagree. The slider sets it from the start.
+      function applySize() { stage.style.fontSize = size.value + 'px'; }
+      if (size) { size.addEventListener('input', applySize); applySize(); }
+
+      // Three weights is a set of choices, not a continuum — a slider implied values
+      // between them that the family does not contain.
+      if (weightSeg) weightSeg.querySelectorAll('[data-weight]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          weightSeg.querySelectorAll('[data-weight]').forEach(function (x) { x.classList.remove('sel'); });
+          b.classList.add('sel');
+          stage.style.fontWeight = b.dataset.weight;
+        });
       });
       render();
     })();

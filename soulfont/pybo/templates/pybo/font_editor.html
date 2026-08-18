@@ -1,11 +1,12 @@
 {% extends 'pybo/base.html' %}
 {% load static %}
 
-{% block title %}Font Editor{% endblock %}
+{% block title %}{{ font_name }}{% endblock %}
+
+{% block app_name %}Font Maker{% endblock %}
 
 {% block head_extra %}
 <style>
-
     {% if ttf_file %}
     @font-face { font-family: "SoulFontEdit-{{ user_data.id }}"; src: url("{{ ttf_file.url }}") format("truetype"); font-weight: 400; }
     {% endif %}
@@ -15,38 +16,21 @@
     {% if ttf_file_bold %}
     @font-face { font-family: "SoulFontEdit-{{ user_data.id }}"; src: url("{{ ttf_file_bold.url }}") format("truetype"); font-weight: 700; }
     {% endif %}
-    .editor-grid { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
-    .panel { border: 1px solid #000; padding: 14px; }
-    .control { margin-bottom: 14px; }
-    .control label { display: flex; justify-content: space-between; gap: 10px; font-size: var(--ui-sm); margin-bottom: 5px; }
-    .control input[type="range"] { width: 100%; }
-    .preview-stage {
-      border: 1px solid #000; background: #fff; min-height: 300px; max-height: 300px;
-      max-width: 100%; padding: 26px; overflow: hidden;
-      display: flex; align-items: center; justify-content: center; text-align: center;
-    }
-    .preview-text {
-      font-family: "SoulFontEdit-{{ user_data.id }}", "Geneva", sans-serif;
-      max-width: 100%; max-height: 100%; overflow: hidden;
-      word-break: break-word; white-space: pre-wrap;
-    }
-    .download-box { border: 1px solid #000; padding: 10px; margin-bottom: 12px; }
-    @media (max-width: 760px) { .editor-grid { grid-template-columns: 1fr; } }
-  
-</style>
+      font-family: "SoulFontEdit-{{ user_data.id }}", 'Galmuri11', sans-serif;
+  </style>
 {% endblock %}
 
 {% block content %}
   <div class="app">
-    <div class="window app-window">
+    <div data-drag class="window app-window">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
-        <h1 class="title">Font Editor</h1>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
+        <h1 class="title">{{ font_name }}</h1>
+        <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
 
       <div class="window-pane">
-        <h2 class="page-title">{{ font_name }}</h2>
 
         {% if message %}<div class="download-box">{{ message }} {% if download_url %}<a class="btn default" href="{{ download_url }}" download>Download</a>{% endif %}</div>{% endif %}
         {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
@@ -77,7 +61,7 @@ SoulFont ABC 123 "'</textarea>
             </div>
 
             <div class="right-row">
-              <button class="btn default" type="submit">Export Edited TTF</button>
+              <button class="btn default" type="submit">Export</button>
             </div>
           </form>
 

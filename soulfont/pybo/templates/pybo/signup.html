@@ -3,55 +3,55 @@
 
 {% block title %}Create Account{% endblock %}
 
-{% block head_extra %}
-<style>
-
-    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
-    @media (max-width: 520px) { .two { grid-template-columns: 1fr; } }
-    .err { color: #000; font-weight: bold; font-size: var(--ui-xs); }
-  
-</style>
-{% endblock %}
+{% block app_name %}Finder{% endblock %}
 
 {% block content %}
   <div class="app">
-    <div class="window app-window narrow">
+    <div data-drag class="window app-window narrow">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
         <h1 class="title">Create Account</h1>
+        <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
 
       <div class="window-pane">
-        <h2 class="page-title">Create your account</h2>
 
         <form method="POST">
+          {% if form.non_field_errors %}<div class="error-box">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>{% endif %}
           {% csrf_token %}
           <div class="field-col">
             <label for="username">Username *</label>
-            <input class="w100" id="username" type="text" name="username" placeholder="soulsoul" required>
+            <input class="w100" id="username" type="text" name="username" placeholder="soulsoul"
+                   value="{{ form.username.value|default:'' }}" required>
             {% for e in form.username.errors %}<div class="err">{{ e }}</div>{% endfor %}
           </div>
           <div class="two">
             <div class="field-col">
               <label for="first_name">First name *</label>
-              <input class="w100" id="first_name" type="text" name="first_name" placeholder="Gildong" required>
+              <input class="w100" id="first_name" type="text" name="first_name" placeholder="Gildong"
+                     value="{{ form.first_name.value|default:'' }}" required>
+              {% for e in form.first_name.errors %}<div class="err">{{ e }}</div>{% endfor %}
             </div>
             <div class="field-col">
               <label for="last_name">Last name</label>
-              <input class="w100" id="last_name" type="text" name="last_name" placeholder="Hong">
+              <input class="w100" id="last_name" type="text" name="last_name" placeholder="Hong"
+                     value="{{ form.last_name.value|default:'' }}">
+              {% for e in form.last_name.errors %}<div class="err">{{ e }}</div>{% endfor %}
             </div>
           </div>
           <div class="field-col">
             <label for="password1">Password *</label>
             <input class="w100" id="password1" type="password" name="password1" placeholder="Password" required>
+            {% for e in form.password1.errors %}<div class="err">{{ e }}</div>{% endfor %}
           </div>
           <div class="field-col">
             <label for="password2">Confirm password *</label>
             <input class="w100" id="password2" type="password" name="password2" placeholder="Re-enter password" required>
+            {% for e in form.password2.errors %}<div class="err">{{ e }}</div>{% endfor %}
           </div>
           <div class="right-row">
-            <button type="submit" class="btn default">Create</button>
+            <button type="submit" class="btn default">Create Account</button>
           </div>
         </form>
 

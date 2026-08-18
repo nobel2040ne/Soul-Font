@@ -1,280 +1,210 @@
 {% extends 'pybo/base.html' %}
 {% load static %}
 
-{% block title %}Write a Letter{% endblock %}
+{% block title %}Letter{% endblock %}
+
+{% block app_name %}Letter{% endblock %}
 
 {% block head_extra %}
 <style>
-
     {% for ud in users %}{% if ud.ttf_file %}
     {% if ud.ttf_file_light %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_light.url }}") format("truetype"); font-weight: 300; }{% endif %}
     @font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file.url }}") format("truetype"); font-weight: 400; }
     {% if ud.ttf_file_bold %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_bold.url }}") format("truetype"); font-weight: 700; }{% endif %}
     {% endif %}{% endfor %}
+  </style>
+{% endblock %}
 
-    /* ---------- font carousel (photo-app style filmstrip) ---------- */
-    .picker-label { font-weight: bold; margin: 8px 0 6px; }
-    .carousel { position: relative; }
-    .carousel-strip {
-      display: flex; gap: 14px; overflow-x: auto; scroll-behavior: smooth;
-      padding: 14px 48px; scroll-snap-type: x mandatory;
-      -ms-overflow-style: none; scrollbar-width: none;
-    }
-    .carousel-strip::-webkit-scrollbar { display: none; }
-    .font-chip {
-      flex: 0 0 auto; width: 150px; scroll-snap-align: center; cursor: pointer;
-      border: 2px solid #000; background: #fff; padding: 12px 10px 10px;
-      text-align: center; transition: transform .25s ease, box-shadow .25s ease, opacity .25s ease;
-      opacity: .7; transform: scale(.9);
-    }
-    .font-chip .chip-sample {
-      height: 58px; display: flex; align-items: center; justify-content: center;
-      font-size: var(--spec-md); line-height: 1; overflow: hidden; word-break: keep-all;
-    }
-    .font-chip .chip-name {
-      margin-top: 8px; font-size: var(--ui-xs); font-weight: bold; overflow: hidden;
-      text-overflow: ellipsis; white-space: nowrap;
-    }
-    .font-chip .chip-user { font-size: var(--ui-xs); color: #555; }
-    .font-chip.sel { opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #000, 4px 4px 0 #000; }
-    /* the shared .btn padding is too wide for a one-character arrow sitting over the strip */
-    .carousel-arrow {
-      position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
-      min-width: 36px; height: 44px; padding: 0;
-    }
-    .carousel-arrow:active { transform: translateY(-50%) translate(2px, 2px); }
-    .carousel-arrow.left { left: 0; }
-    .carousel-arrow.right { right: 0; }
+{% block app_menus %}
+  {% comment %}
+  A Mac application installed its own menus when it came to the front, so the editor's
+  Edit, Size and Style menus live in the menu bar rather than as another toolbar. Command
+  keys are the ones the era used, and everything acts on the selection.
+  {% endcomment %}
+  <span class="mb-menu" data-menu>
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">File</span>
+    <ul role="menu">
+      <li role="menuitem" data-cmd="clearDoc">New Letter<span class="key">N</span></li>
+      <li role="menuitem" data-cmd="savePicture">Save as Picture<span class="key">S</span></li>
+      <li class="sep" role="separator"></li>
+      <li role="menuitem" data-go="{% url 'create_font' %}">Make a Font</li>
+      <li class="sep" role="separator"></li>
+      <li role="menuitem" data-go="{% url 'desktop' %}">Quit<span class="key">Q</span></li>
+    </ul>
+  </span>
 
-    /* ---------- design / template + ratio pickers ---------- */
-    .designs { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; }
-    .design-btn {
-      width: 56px; height: 40px; border: 2px solid #000; cursor: pointer; padding: 0;
-      background-size: cover; background-position: center;
-    }
-    .design-btn.sel { box-shadow: 0 0 0 2px #000, 3px 3px 0 #000; }
-    /* swatch previews — the #paper.design-* rules are id-scoped, so the buttons need
-       their own mini backgrounds or they'd render as empty boxes. */
-    .design-btn.design-plain { background: #fff; }
-    .design-btn.design-lined {
-      background-color: #fff;
-      background-image: linear-gradient(#cfe0f0 1px, transparent 1px);
-      background-size: 100% 9px; background-position: 0 6px;
-    }
-    .design-btn.design-grid {
-      background-color: #fff;
-      background-image:
-        linear-gradient(#d2d2d2 1px, transparent 1px),
-        linear-gradient(90deg, #d2d2d2 1px, transparent 1px);
-      background-size: 8px 8px;
-    }
-    .design-btn.design-vintage { background: #f6efde; border-color: #b89a5e; box-shadow: 0 0 0 2px #f6efde inset, 0 0 0 3px #b89a5e inset; }
-    .design-btn.design-vintage.sel { box-shadow: 0 0 0 2px #000, 3px 3px 0 #000; }
-    .design-btn.design-note { background: #fff7b0; }
-    .design-btn.design-blush {
-      background-color: #fdeef0;
-      background-image: radial-gradient(#f6cdd5 1px, transparent 1.5px);
-      background-size: 7px 7px;
-    }
-    .seg { display: inline-flex; flex-wrap: wrap; }
-    .seg .btn { min-width: 40px; }
-    .seg .btn.sel { font-weight: bold; box-shadow: 0 0 0 2px #000 inset; }
-    /* match the trailing space the carousel leaves, so the gaps between the three
-       picker sections stay equal */
-    .shape-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-    .shape-row label { font-size: var(--ui-sm); }
+  <span class="mb-menu" data-menu>
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">Edit</span>
+    <ul role="menu">
+      <li role="menuitem" data-cmd="undo">Undo<span class="key">Z</span></li>
+      <li role="menuitem" data-cmd="redo">Redo<span class="key">Y</span></li>
+      <li class="sep" role="separator"></li>
+      <li role="menuitem" data-cmd="cut">Cut<span class="key">X</span></li>
+      <li role="menuitem" data-cmd="copy">Copy<span class="key">C</span></li>
+      <li role="menuitem" data-cmd="paste-plain">Paste<span class="key">V</span></li>
+      <li class="sep" role="separator"></li>
+      <li role="menuitem" data-cmd="selectAll">Select All<span class="key">A</span></li>
+      <li role="menuitem" data-cmd="clearDoc">Clear</li>
+    </ul>
+  </span>
 
-    /* ---------- classic document window (SimpleText-style) ---------- */
-    .doc-window { max-width: 760px; margin: 6px auto 4px; }
-    .doc-window .title-bar .title { font-size: var(--ui-sm); }
-    .editor-toolbar {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
-      padding: 8px 12px; border-bottom: 2px solid #000; background: #dcdcdc;
-    }
-    .editor-toolbar label { font-size: var(--ui-sm); }
-    .editor-toolbar .ctl-size { width: 150px; }
-    .editor-toolbar .tb-spacer { flex: 1; }
-    /* gray "desk" behind the page; the window scrolls, the page grows */
-    .doc-scroll {
-      background: #8f8f8f;
-      background-image: repeating-conic-gradient(#828282 0% 25%, #9c9c9c 0% 50%);
-      background-size: 4px 4px;
-      padding: 22px; max-height: 600px; overflow: auto; display: flex; justify-content: center;
-    }
+  <span class="mb-menu" data-menu>
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">Size</span>
+    <ul role="menu" id="sizeMenu">
+      <li role="menuitemradio" data-size="14">14 point</li>
+      <li role="menuitemradio" data-size="18">18 point</li>
+      <li role="menuitemradio" data-size="22" aria-checked="true">22 point</li>
+      <li role="menuitemradio" data-size="28">28 point</li>
+      <li role="menuitemradio" data-size="36">36 point</li>
+      <li role="menuitemradio" data-size="48">48 point</li>
+      <li role="menuitemradio" data-size="72">72 point</li>
+    </ul>
+  </span>
 
-    /* ---------- the editable letter (PNG export target) ---------- */
-    #paper {
-      width: 520px; max-width: 100%; padding: 48px 44px;
-      box-sizing: border-box; color: #111;
-      display: flex; flex-direction: column; gap: 22px;
-      overflow: hidden;  /* strictly clip anything that runs past the page bounds */
-      box-shadow: 0 2px 0 rgba(0,0,0,.35), 0 6px 14px rgba(0,0,0,.35);
-    }
-    #paper .letter-body {
-      flex: 1 1 auto; min-height: 0; outline: none; font-size: var(--spec-sm); line-height: 1.55;
-      word-break: break-word; overflow: hidden; white-space: pre-wrap;
-    }
-    #paper .letter-body:empty::before { content: attr(data-placeholder); color: #999; }
-    #paper .letter-sign {
-      flex: 0 0 auto; outline: none; font-size: var(--spec-sm); text-align: right; line-height: 1.4;
-      min-height: 1em; overflow: hidden; word-break: break-word; white-space: pre-wrap;
-    }
-    #paper .letter-sign:empty::before { content: attr(data-placeholder); color: #999; }
-
-    /* paper ratios (id-qualified so they win over the base #paper rule) */
-    #paper.ratio-a4p      { width: 520px; aspect-ratio: 210 / 297; }
-    #paper.ratio-a4l      { width: 700px; aspect-ratio: 297 / 210; }
-    #paper.ratio-square   { width: 540px; aspect-ratio: 1 / 1; }
-    #paper.ratio-letter   { width: 520px; aspect-ratio: 8.5 / 11; }
-    #paper.ratio-postcard { width: 620px; aspect-ratio: 148 / 100; }
-
-    /* paper designs (id-qualified -> beat the base #paper background/color) */
-    #paper.design-plain { background: #fff; }
-    #paper.design-lined {
-      background-color: #fff;
-      background-image: linear-gradient(#cfe0f0 1px, transparent 1px);
-      background-size: 100% 44px; background-position: 0 46px;
-    }
-    #paper.design-grid {
-      background-color: #fff;
-      background-image:
-        linear-gradient(#e6e6e6 1px, transparent 1px),
-        linear-gradient(90deg, #e6e6e6 1px, transparent 1px);
-      background-size: 28px 28px;
-    }
-    #paper.design-vintage { background: #f6efde; color: #3a2f1b; border: 8px double #b89a5e; }
-    #paper.design-note    { background: #fff7b0; color: #2a2a14; }
-    #paper.design-blush {
-      background: #fdeef0; color: #5a2a35;
-      background-image: radial-gradient(#f6cdd5 1.4px, transparent 1.5px);
-      background-size: 22px 22px;
-    }
-
-    .empty-note { text-align: center; padding: 30px 10px; }
-
-    @media (max-width: 560px) {
-      #paper { padding: 30px 22px; }
-      #paper .letter-body { font-size: var(--spec-sm); }
-      .carousel-strip { padding: 14px 44px; }
-      .doc-scroll { padding: 12px; }
-    }
-  
-</style>
+  <span class="mb-menu" data-menu>
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">Style</span>
+    <ul role="menu" id="styleMenu">
+      <li role="menuitem" data-style="plain">Plain Text<span class="key">T</span></li>
+      <li class="sep" role="separator"></li>
+      <li role="menuitemcheckbox" data-style="bold">Bold<span class="key">B</span></li>
+      <li role="menuitemcheckbox" data-style="underline">Underline<span class="key">U</span></li>
+      <li role="menuitemcheckbox" data-style="outline">Outline</li>
+      <li role="menuitemcheckbox" data-style="shadow">Shadow</li>
+    </ul>
+  </span>
 {% endblock %}
 
 {% block content %}
+  {% comment %}
+  One window, laid out like a word processor: title bar, then a toolbar of everything that
+  changes the document, then the document itself on a grey desk. It used to be a window
+  inside a window, with the font and paper pickers stacked above both — so the page asked
+  you to make three decisions before showing you what you were writing on.
+  {% endcomment %}
   <div class="app">
-    <div class="window app-window">
+    <div data-drag class="window app-window doc-app">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
-        <h1 class="title">Write a Letter</h1>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
+        <h1 class="title">Letter</h1>
+        <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
 
-      <div class="window-pane">
-        <h2 class="page-title">Write a Letter</h2>
-        <p class="lede">Pick a font and paper, write your note, then save it as an image.</p>
+      {% if users %}
+      {% comment %}
+      The ribbon, laid out the way Word 5.0 laid one out: the pop-up menus that say what the
+      text is on the left, then square icon buttons in clusters, hairline rules between the
+      clusters. A toggle inverts when it is on. Row two is the page rather than the text.
+      {% endcomment %}
+      <div class="ribbon">
+        <select id="fontSel" class="rb-font" aria-label="Font">
+          {% for ud in users %}{% if ud.ttf_file %}
+            <option value="SoulFont-{{ ud.id }}" data-id="{{ ud.id }}">{{ ud.font_name }} &middot; @{{ ud.user.username }}</option>
+          {% endif %}{% endfor %}
+        </select>
+        <select id="sizeSel" class="rb-size" aria-label="Size">
+          <option>9</option><option>10</option><option>12</option><option>14</option>
+          <option>18</option><option selected>22</option><option>28</option>
+          <option>36</option><option>48</option><option>72</option>
+        </select>
+        <select id="weightSel" class="rb-weight" aria-label="Weight">
+          <option value="300">Light</option>
+          <option value="400" selected>Regular</option>
+          <option value="700">Bold</option>
+        </select>
 
-        {% if users %}
-        <!-- 1 · font carousel -->
-        <div class="picker-label">Choose a font</div>
-        <div class="carousel">
-          <button class="btn carousel-arrow left" type="button" id="cLeft">&lt;</button>
-          <div class="carousel-strip" id="strip">
-            {% for ud in users %}{% if ud.ttf_file %}
-            <div class="font-chip" data-font="SoulFont-{{ ud.id }}" data-id="{{ ud.id }}">
-              <div class="chip-sample" style="font-family:'SoulFont-{{ ud.id }}','Geneva',sans-serif">가나다</div>
-              <div class="chip-name">{{ ud.font_name }}</div>
-              <div class="chip-user">@ {{ ud.user.username }}</div>
-            </div>
-            {% endif %}{% endfor %}
-          </div>
-          <button class="btn carousel-arrow right" type="button" id="cRight">&gt;</button>
-        </div>
+        <span class="rb-sep"></span>
+        <button class="ico ico-b" type="button" data-style="bold" title="Bold" aria-pressed="false">B</button>
+        <button class="ico ico-i" type="button" data-style="italic" title="Italic" aria-pressed="false">I</button>
+        <button class="ico ico-u" type="button" data-style="underline" title="Underline" aria-pressed="false">U</button>
+        <button class="ico ico-o" type="button" data-style="outline" title="Outline" aria-pressed="false">A</button>
+        <button class="ico ico-s" type="button" data-style="shadow" title="Shadow" aria-pressed="false">A</button>
 
-        <!-- 2 · paper design + shape -->
-        <div class="picker-label">Choose a paper</div>
-        <div class="designs" id="designs">
+        <span class="rb-sep"></span>
+        <button class="ico sel" type="button" data-align="left" title="Align left" aria-pressed="true"><i class="i-left"></i></button>
+        <button class="ico" type="button" data-align="center" title="Align centre" aria-pressed="false"><i class="i-center"></i></button>
+        <button class="ico" type="button" data-align="right" title="Align right" aria-pressed="false"><i class="i-right"></i></button>
+        <button class="ico" type="button" data-align="justify" title="Justify" aria-pressed="false"><i class="i-just"></i></button>
+
+        <span class="rb-sep"></span>
+        <button class="ico" type="button" data-list="insertUnorderedList" title="Bulleted list"><i class="i-bullet"></i></button>
+        <button class="ico" type="button" data-list="insertOrderedList" title="Numbered list"><i class="i-number"></i></button>
+      </div>
+
+      <div class="ribbon">
+        <select id="ratioSel" class="rb-paper" aria-label="Paper size">
+          <option value="ratio-a4p" selected>A4 tall</option>
+          <option value="ratio-a4l">A4 wide</option>
+          <option value="ratio-square">Square</option>
+          <option value="ratio-letter">Letter</option>
+          <option value="ratio-postcard">Postcard</option>
+        </select>
+
+        {% comment %} swatches rather than names: each one shows the paper it selects {% endcomment %}
+        <span class="designs" id="designs" role="group" aria-label="Paper design">
           <button class="design-btn design-plain sel" type="button" data-design="design-plain" title="Plain"></button>
           <button class="design-btn design-lined" type="button" data-design="design-lined" title="Lined"></button>
           <button class="design-btn design-grid" type="button" data-design="design-grid" title="Grid"></button>
           <button class="design-btn design-vintage" type="button" data-design="design-vintage" title="Vintage"></button>
           <button class="design-btn design-note" type="button" data-design="design-note" title="Sticky note"></button>
           <button class="design-btn design-blush" type="button" data-design="design-blush" title="Blush"></button>
-        </div>
-        {% comment %}
-        Five buttons for five names is a list, not a set of tools. The design swatches
-        above stay as buttons because they show the paper itself.
-        {% endcomment %}
-        <div class="shape-row">
-          <label for="ratioSel">Shape</label>
-          <select id="ratioSel">
-            <option value="ratio-a4p" selected>A4 tall</option>
-            <option value="ratio-a4l">A4 wide</option>
-            <option value="ratio-square">Square</option>
-            <option value="ratio-letter">Letter</option>
-            <option value="ratio-postcard">Postcard</option>
-          </select>
-        </div>
+        </span>
 
-        <!-- 3 · write (classic document window) -->
-        <div class="picker-label">Write your letter</div>
-        <div class="window doc-window">
-          <div class="title-bar">
-            <span class="close" aria-hidden="true"></span>
-            <h1 class="title">Untitled letter</h1>
-              </div>
-          <div class="separator"></div>
-          <div class="editor-toolbar">
-            <label for="bodySize">Size</label>
-            <input class="ctl-size" id="bodySize" type="range" min="14" max="56" value="22">
-            <label for="bodyWeight">Weight</label>
-            <input class="ctl-size" id="bodyWeight" type="range" min="300" max="700" step="100" value="400">
-            <span class="seg" id="alignSeg">
-              <button class="btn sel" type="button" data-align="left">Left</button>
-              <button class="btn" type="button" data-align="center">Center</button>
-              <button class="btn" type="button" data-align="right">Right</button>
-            </span>
-            <span class="tb-spacer"></span>
-            <button class="btn" type="button" id="clearBtn">Clear</button>
-          </div>
-          <div class="doc-scroll">
-            <div id="paper" class="design-plain ratio-a4p">
-              <div class="letter-body" id="letterBody" contenteditable="true" spellcheck="false"
-                   data-placeholder="Dear friend, …"></div>
-              <div class="letter-sign" id="letterSign" contenteditable="true" spellcheck="false"
-                   data-placeholder="from me"></div>
-            </div>
-          </div>
-        </div>
+        <span class="rb-spacer"></span>
+        <button class="ico" type="button" id="clearBtn" title="Clear the letter"><i class="i-trash"></i></button>
+        <button class="ico" type="button" id="exportBtn" title="Save as a picture"><i class="i-disk"></i></button>
+      </div>
 
-        <div class="right-row">
-          <button class="btn default" type="button" id="exportBtn">Save as PNG</button>
+      {% comment %}
+      The ruler. Marked in real inches, because CSS defines one inch as 96px, so the numbers
+      describe the page rather than decorating it. Drag either marker to set the margins.
+      {% endcomment %}
+      <div class="doc-ruler">
+        <div class="rl-track" id="rlTrack">
+          <span class="rl-mark" id="rlLeft" role="slider" tabindex="0" aria-label="Left margin"
+                aria-valuemin="0" aria-valuemax="200" aria-valuenow="44"></span>
+          <span class="rl-mark" id="rlRight" role="slider" tabindex="0" aria-label="Right margin"
+                aria-valuemin="0" aria-valuemax="200" aria-valuenow="44"></span>
         </div>
-        {% else %}
+      </div>
+
+      {% comment %} the document, on the desk {% endcomment %}
+      <div class="doc-scroll">
+        <div id="paper" class="design-plain ratio-a4p">
+          <div class="letter-body" id="letterBody" contenteditable="true" spellcheck="false"
+               data-placeholder="Dear friend, …"></div>
+          <div class="letter-sign" id="letterSign" contenteditable="true" spellcheck="false"
+               data-placeholder="from me"></div>
+        </div>
+      </div>
+
+      <div class="doc-status">
+        <span class="st-cell" id="statChars">0 characters</span>
+        <span class="st-cell" id="statWords">0 words</span>
+        <span class="tb-spacer"></span>
+        <span id="statStyle">Regular 22 pt</span>
+      </div>
+      {% else %}
+      <div class="window-pane">
         <div class="empty-note">
           <p>No fonts have been created yet.</p>
-          <button class="btn default" onclick="location.href='{% url 'create_font' %}'">Create My Font</button>
+          <button class="btn default" onclick="location.href='{% url 'create_font' %}'">Create Font</button>
         </div>
-        {% endif %}
       </div>
+      {% endif %}
     </div>
   </div>
-
-  
 {% endblock %}
 
 {% block scripts %}
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script>
     (function () {
-      var strip = document.getElementById('strip');
-      if (!strip) return;
-      var chips = Array.prototype.slice.call(strip.querySelectorAll('.font-chip'));
+      var fontSel = document.getElementById('fontSel');
       var paper = document.getElementById('paper');
       var body = document.getElementById('letterBody');
       var sign = document.getElementById('letterSign');
-      if (!chips.length) return;
+      if (!fontSel || !paper) return;
 
       // swap one class within a prefix group, leaving the other groups intact
       function setGroupClass(el, prefix, cls) {
@@ -284,38 +214,23 @@
         el.classList.add(cls);
       }
 
-      // ---- font selection ----
-      function selectChip(chip) {
-        chips.forEach(function (c) { c.classList.toggle('sel', c === chip); });
-        var fam = chip.getAttribute('data-font');
-        body.style.fontFamily = "'" + fam + "', 'Geneva', sans-serif";
-        sign.style.fontFamily = "'" + fam + "', 'Geneva', sans-serif";
-        chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      // ---- font ----
+      // A word processor picks a font from a menu and shows the result in the document,
+      // rather than making you browse a gallery before you can start writing.
+      function applyFont() {
+        var fam = fontSel.value;
+        body.style.fontFamily = "'" + fam + "', 'Galmuri11', sans-serif";
+        sign.style.fontFamily = "'" + fam + "', 'Galmuri11', sans-serif";
       }
-      chips.forEach(function (chip) {
-        chip.addEventListener('click', function () { selectChip(chip); });
-      });
+      fontSel.addEventListener('change', applyFont);
 
-      // preselect from ?font=ID, else first chip
-      var params = new URLSearchParams(window.location.search);
-      var wanted = params.get('font');
-      var initial = chips[0];
+      // ?font=ID arrives from the "Write Letter" button on a font's page
+      var wanted = new URLSearchParams(window.location.search).get('font');
       if (wanted) {
-        var match = chips.filter(function (c) { return c.getAttribute('data-id') === wanted; })[0];
-        if (match) initial = match;
+        var opt = fontSel.querySelector('option[data-id="' + wanted + '"]');
+        if (opt) fontSel.value = opt.value;
       }
-      selectChip(initial);
-      requestAnimationFrame(function () {
-        initial.scrollIntoView({ inline: 'center', block: 'nearest' });
-      });
-
-      // ---- arrows ----
-      document.getElementById('cLeft').addEventListener('click', function () {
-        strip.scrollBy({ left: -180, behavior: 'smooth' });
-      });
-      document.getElementById('cRight').addEventListener('click', function () {
-        strip.scrollBy({ left: 180, behavior: 'smooth' });
-      });
+      applyFont();
 
       // ---- paper designs ----
       var designBtns = Array.prototype.slice.call(document.querySelectorAll('.design-btn'));
@@ -333,42 +248,306 @@
         setGroupClass(paper, 'ratio-', ratioSel.value);
       });
 
-      // ---- text size ----
-      var size = document.getElementById('bodySize');
-      size.addEventListener('input', function () {
-        body.style.fontSize = size.value + 'px';
-        sign.style.fontSize = Math.round(size.value * 0.85) + 'px';
+      // ---- editing commands ----
+      // The document is contenteditable, so the browser's own editing stack gives us undo,
+      // redo and selection handling for free — including a real insertion point. execCommand
+      // is deprecated but is the only thing that applies formatting to a selection across
+      // every browser, and there is no replacement for it yet.
+      function focusDoc() { if (document.activeElement !== body && document.activeElement !== sign) body.focus(); }
+      function exec(cmd, val) { focusDoc(); document.execCommand(cmd, false, val || null); updateStatus(); }
+
+      var EDIT = {
+        undo: function () { exec('undo'); },
+        redo: function () { exec('redo'); },
+        cut: function () { exec('cut'); },
+        copy: function () { exec('copy'); },
+        selectAll: function () { focusDoc(); document.execCommand('selectAll'); },
+        'paste-plain': function () {
+          // the clipboard needs permission; the keyboard path always works, so say so
+          focusDoc();
+          var byKey = function () { sfAlert('Use \u2318V to paste.'); };
+          if (navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText()
+              .then(function (t) { exec('insertText', t); })
+              .catch(byKey);
+          } else {
+            byKey();
+          }
+        },
+        clearDoc: function () { body.innerHTML = ''; sign.innerHTML = ''; updateStatus(); },
+        savePicture: function () { document.getElementById('exportBtn').click(); }
+      };
+
+      // ---- style, applied to the selection ----
+      var STYLE = {
+        bold: function () { exec('bold'); },
+        italic: function () { exec('italic'); },
+        underline: function () { exec('underline'); },
+        outline: function () { toggleWrap('outline-text'); },
+        shadow: function () { toggleWrap('shadow-text'); },
+        plain: function () {
+          focusDoc();
+          document.execCommand('removeFormat');
+          ['outline-text', 'shadow-text'].forEach(stripWrap);
+          updateStatus();
+        }
+      };
+
+      // Outline and Shadow have no execCommand, so they are spans we add and remove.
+      function toggleWrap(cls) {
+        focusDoc();
+        var sel = window.getSelection();
+        if (!sel.rangeCount || sel.isCollapsed) return;
+        var range = sel.getRangeAt(0);
+        var parent = range.commonAncestorContainer;
+        var el = parent.nodeType === 1 ? parent : parent.parentNode;
+        if (el.closest('.' + cls)) { stripWrap(cls); return; }
+        var span = document.createElement('span');
+        span.className = cls;
+        try { range.surroundContents(span); } catch (e) { /* selection spans elements */ }
+        updateStatus();
+      }
+      function stripWrap(cls) {
+        body.querySelectorAll('.' + cls).forEach(function (el) {
+          var p = el.parentNode;
+          while (el.firstChild) p.insertBefore(el.firstChild, el);
+          p.removeChild(el);
+        });
+      }
+
+      document.querySelectorAll('[data-cmd]').forEach(function (li) {
+        li.addEventListener('click', function () { var f = EDIT[li.dataset.cmd]; if (f) f(); });
       });
 
-      // ---- weight (Light 300 <-> Regular 400 <-> Bold 700; uses generated faces) ----
-      var weight = document.getElementById('bodyWeight');
-      weight.addEventListener('input', function () {
-        body.style.fontWeight = weight.value;
-        sign.style.fontWeight = weight.value;
+      // A menu that advertises a command key has to honour it, and these commands act on the
+      // document rather than navigating, so retro.js's shortcut table cannot carry them. The
+      // browser owns Cut, Copy, Paste, Undo and Select All inside a contenteditable already,
+      // so only the ones it does not know about are claimed here.
+      var DOC_KEYS = {};
+      document.querySelectorAll('[data-menu] li[data-cmd], [data-menu] li[data-style]').forEach(function (li) {
+        var key = li.querySelector('.key');
+        if (!key) return;
+        var ch = key.textContent.replace(/[^0-9A-Za-z]/g, '').toLowerCase();
+        if (!ch || ['x', 'c', 'v', 'z', 'a'].indexOf(ch) !== -1) return;
+        DOC_KEYS[ch] = li;
+      });
+      document.addEventListener('keydown', function (e) {
+        if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
+        var li = DOC_KEYS[e.key.toLowerCase()];
+        if (!li) return;
+        e.preventDefault();
+        li.click();
+      });
+      document.querySelectorAll('[data-style]').forEach(function (li) {
+        li.addEventListener('click', function () {
+          var f = STYLE[li.dataset.style];
+          if (f) { f(); syncRibbon(); }
+        });
+      });
+
+      // ---- the Size menu and the ribbon's Size pop-up are the same setting ----
+      // Word put size in both places too, and the two always agreed. Whichever you use, the
+      // other moves.
+      var sizeSel = document.getElementById('sizeSel');
+      function setSize(px) {
+        body.style.fontSize = px + 'px';
+        sign.style.fontSize = Math.max(9, Math.round(px * 0.86)) + 'px';
+        if (sizeSel && +sizeSel.value !== +px) sizeSel.value = String(px);
+        document.querySelectorAll('#sizeMenu [data-size]').forEach(function (li) {
+          li.setAttribute('aria-checked', String(+li.dataset.size === +px));
+        });
+        updateStatus();
+      }
+      document.querySelectorAll('#sizeMenu [data-size]').forEach(function (li) {
+        li.addEventListener('click', function () { setSize(+li.dataset.size); });
+      });
+      if (sizeSel) sizeSel.addEventListener('change', function () { setSize(+sizeSel.value); });
+
+      // ---- status bar ----
+      function updateStatus() {
+        var text = (body.innerText || '').replace(/\u00a0/g, ' ');
+        var chars = text.replace(/\s+$/, '').length;
+        var words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        var c = document.getElementById('statChars'), w = document.getElementById('statWords'),
+            st = document.getElementById('statStyle');
+        if (c) c.textContent = chars + (chars === 1 ? ' character' : ' characters');
+        if (w) w.textContent = words + (words === 1 ? ' word' : ' words');
+        if (st) {
+          var wt = body.style.fontWeight || '400';
+          var name = wt === '300' ? 'Light' : wt === '700' ? 'Bold' : 'Regular';
+          st.textContent = name + ' ' + parseInt(body.style.fontSize || '22', 10) + ' pt';
+        }
+      }
+      body.addEventListener('input', updateStatus);
+      body.addEventListener('keyup', updateStatus);
+      sign.addEventListener('input', updateStatus);
+
+      // ---- weight ----
+      // The family has exactly three weights, so this is a pop-up over three named values,
+      // not a slider across a range that contains nothing in between.
+      var weightSel = document.getElementById('weightSel');
+      if (weightSel) weightSel.addEventListener('change', function () {
+        body.style.fontWeight = weightSel.value;
+        sign.style.fontWeight = weightSel.value;
+        updateStatus();
       });
 
       // ---- alignment ----
-      var alignBtns = Array.prototype.slice.call(document.querySelectorAll('#alignSeg .btn'));
+      var alignBtns = Array.prototype.slice.call(document.querySelectorAll('.ribbon [data-align]'));
       alignBtns.forEach(function (b) {
         b.addEventListener('click', function () {
-          alignBtns.forEach(function (x) { x.classList.remove('sel'); });
+          alignBtns.forEach(function (x) {
+            x.classList.remove('sel');
+            x.setAttribute('aria-pressed', 'false');
+          });
           b.classList.add('sel');
+          b.setAttribute('aria-pressed', 'true');
           body.style.textAlign = b.getAttribute('data-align');
         });
       });
+
+      // ---- lists ----
+      document.querySelectorAll('.ribbon [data-list]').forEach(function (b) {
+        b.addEventListener('click', function () { exec(b.dataset.list); });
+      });
+
+      // ---- the ribbon's toggles show the state of the insertion point ----
+      // A toggle that does not light up when the caret is inside bold text is a button, not
+      // a toggle. queryCommandState answers for the three the browser owns; outline and
+      // shadow are our own spans, so they are answered by looking at the ancestors.
+      var TOGGLES = { bold: 'bold', italic: 'italic', underline: 'underline' };
+      var WRAPS = { outline: 'outline-text', shadow: 'shadow-text' };
+      function syncRibbon() {
+        document.querySelectorAll('.ribbon [data-style]').forEach(function (b) {
+          var name = b.dataset.style, on = false;
+          if (TOGGLES[name]) {
+            try { on = document.queryCommandState(TOGGLES[name]); } catch (e) { on = false; }
+          } else if (WRAPS[name]) {
+            var sel = window.getSelection();
+            if (sel && sel.rangeCount) {
+              var n = sel.getRangeAt(0).commonAncestorContainer;
+              var el = n.nodeType === 1 ? n : n.parentNode;
+              on = !!(el && el.closest && el.closest('.' + WRAPS[name]));
+            }
+          }
+          b.classList.toggle('sel', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+      }
+      document.addEventListener('selectionchange', syncRibbon);
 
       // ---- clear ----
       document.getElementById('clearBtn').addEventListener('click', function () {
         body.textContent = '';
         sign.textContent = '';
         body.focus();
+        updateStatus();
       });
+
+      // ---- the ruler ----
+      // Real inches: CSS defines 1in as exactly 96px, so a tick every 96px across the page
+      // is a true inch mark rather than decoration. Dragging a marker sets that side's
+      // margin, which is the one thing the ruler was actually for.
+      var track = document.getElementById('rlTrack');
+      var markL = document.getElementById('rlLeft');
+      var markR = document.getElementById('rlRight');
+      var PX_PER_IN = 96, MIN_MARGIN = 8;
+
+      function paperWidth() { return paper.getBoundingClientRect().width; }
+
+      // The ruler used to be centred in its own row and the page centred in its own, which is
+      // only the same position while nothing else moves — the moment the desk grew a scrollbar
+      // the page shifted left and the ruler stayed put. Its position is measured from the page
+      // instead, so the two cannot disagree.
+      function alignToPaper() {
+        var host = document.querySelector('.doc-ruler');
+        var pr = paper.getBoundingClientRect();
+        var hr = host.getBoundingClientRect();
+        track.style.width = pr.width + 'px';
+        track.style.marginLeft = (pr.left - hr.left) + 'px';
+      }
+
+      function drawTicks() {
+        var w = paperWidth();
+        track.querySelectorAll('.rl-tick, .rl-num').forEach(function (n) { n.remove(); });
+        for (var x = 0; x <= w; x += PX_PER_IN / 4) {
+          var whole = Math.abs(x % PX_PER_IN) < 0.5;
+          var tick = document.createElement('span');
+          tick.className = 'rl-tick ' + (whole ? 'maj' : 'min');
+          tick.style.left = x + 'px';
+          track.appendChild(tick);
+          if (whole && x > 0) {
+            var num = document.createElement('span');
+            num.className = 'rl-num';
+            num.textContent = String(Math.round(x / PX_PER_IN));
+            num.style.left = x + 'px';
+            track.appendChild(num);
+          }
+        }
+      }
+
+      function margins() {
+        var cs = window.getComputedStyle(paper);
+        return { l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0 };
+      }
+      function placeMarkers() {
+        var m = margins(), w = paperWidth();
+        markL.style.left = m.l + 'px';
+        markR.style.left = (w - m.r) + 'px';
+        markL.setAttribute('aria-valuenow', Math.round(m.l));
+        markR.setAttribute('aria-valuenow', Math.round(m.r));
+      }
+      function setMargin(side, px) {
+        var w = paperWidth();
+        var limit = w / 2 - 20;
+        px = Math.max(MIN_MARGIN, Math.min(limit, px));
+        paper.style[side === 'l' ? 'paddingLeft' : 'paddingRight'] = px + 'px';
+        placeMarkers();
+      }
+
+      function dragMarker(mark, side) {
+        mark.addEventListener('pointerdown', function (e) {
+          e.preventDefault();
+          mark.setPointerCapture(e.pointerId);
+          function move(ev) {
+            var rect = track.getBoundingClientRect();
+            var x = ev.clientX - rect.left;
+            setMargin(side, side === 'l' ? x : rect.width - x);
+          }
+          function up(ev) {
+            mark.releasePointerCapture(ev.pointerId);
+            mark.removeEventListener('pointermove', move);
+            mark.removeEventListener('pointerup', up);
+          }
+          mark.addEventListener('pointermove', move);
+          mark.addEventListener('pointerup', up);
+        });
+        // the marker is a slider, so the arrow keys have to move it
+        mark.addEventListener('keydown', function (e) {
+          var step = e.shiftKey ? 12 : 2, cur = margins()[side];
+          if (e.key === 'ArrowLeft') { setMargin(side, side === 'l' ? cur - step : cur + step); }
+          else if (e.key === 'ArrowRight') { setMargin(side, side === 'l' ? cur + step : cur - step); }
+          else return;
+          e.preventDefault();
+        });
+      }
+      dragMarker(markL, 'l');
+      dragMarker(markR, 'r');
+
+      function layoutRuler() { alignToPaper(); drawTicks(); placeMarkers(); }
+      layoutRuler();
+      window.addEventListener('resize', layoutRuler);
+      // the desk gains and loses its scrollbar as the letter grows, which moves the page
+      if (window.ResizeObserver) new ResizeObserver(layoutRuler).observe(paper);
+      // the paper changes width when its shape changes, so the ruler has to follow it
+      if (ratioSel) ratioSel.addEventListener('change', function () { setTimeout(layoutRuler, 0); });
 
       // ---- export PNG ----
       var exportBtn = document.getElementById('exportBtn');
       exportBtn.addEventListener('click', function () {
         if (typeof html2canvas === 'undefined') {
-          alert('Could not load the image library. Check your connection and try again.');
+          sfAlert('Could not load the image library. Check your connection and try again.',
+                  { icon: 'caution' });
           return;
         }
         var label = exportBtn.textContent;
@@ -386,7 +565,7 @@
           link.click();
         }).catch(function (err) {
           console.error(err);
-          alert('Sorry, the PNG could not be created.');
+          sfAlert('Sorry, the PNG could not be created.', { icon: 'caution' });
         }).then(function () {
           exportBtn.textContent = label;
           exportBtn.disabled = false;

@@ -1,7 +1,38 @@
 {% extends 'pybo/base.html' %}
 {% load static %}
 
-{% block title %}Feel Your Font{% endblock %}
+{% block title %}Fonts{% endblock %}
+
+{% block app_name %}Fonts{% endblock %}
+
+{% block app_menus %}
+  {% comment %}
+  The Finder kept how you were looking at a window in a View menu with a tick beside the
+  current choice, so that is where this lives rather than in two push buttons above the
+  gallery. retro.js already persists the mode and reads ?view, so only the trigger moved.
+  {% endcomment %}
+  <span class="mb-menu" data-menu>
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">File</span>
+    <ul role="menu">
+      <li role="menuitem" data-go="{% url 'create_font' %}">New Font<span class="key">N</span></li>
+      {% if request.user.is_authenticated %}
+        <li role="menuitem" data-go="{% url 'my_page' %}">Open My Fonts<span class="key">O</span></li>
+      {% else %}
+        <li role="menuitem" class="off" aria-disabled="true">Open My Fonts<span class="key">O</span></li>
+      {% endif %}
+      <li class="sep" role="separator"></li>
+      <li role="menuitem" data-go="{% url 'download_template' %}">Get Template<span class="key">T</span></li>
+    </ul>
+  </span>
+
+  <span class="mb-menu" data-menu id="viewMenu">
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">View</span>
+    <ul role="menu" aria-label="View">
+      <li role="menuitemradio" data-view="coverflow">as Coverflow</li>
+      <li role="menuitemradio" data-view="directory">as List</li>
+    </ul>
+  </span>
+{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -10,7 +41,7 @@
     {% if ud.ttf_file_light %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_light.url }}") format("truetype"); font-weight: 300; }{% endif %}
     @font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file.url }}") format("truetype"); font-weight: 400; }
     {% if ud.ttf_file_bold %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_bold.url }}") format("truetype"); font-weight: 700; }{% endif %}
-    .quote-{{ ud.id }} { font-family: "SoulFont-{{ ud.id }}", "Geneva", sans-serif; }
+    .quote-{{ ud.id }} { font-family: "SoulFont-{{ ud.id }}", 'Galmuri11', sans-serif; }
     {% endif %}{% endfor %}
   
 </style>
@@ -18,22 +49,20 @@
 
 {% block content %}
   <div class="app">
-    <div class="window app-window home-window">
+    <div data-drag class="window app-window home-window">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
-        <h1 class="title">SoulFont</h1>
-        <button aria-label="Resize" class="resize"></button>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
+        <h1 class="title">Fonts</h1>
+        <span class="zoom" aria-hidden="true"></span>
+      </div>
+      <div class="separator"></div>
+
+      <div class="folder-info">
+        <span>{{ users|length }} font{{ users|length|pluralize }}</span>
       </div>
       <div class="separator"></div>
 
       <div class="window-pane">
-        <h2 class="page-title">Feel Your Font</h2>
-        <p class="lede">Your handwriting becomes a font. Browse the souls already connected by SoulFont.</p>
-
-        <div class="view-switch">
-          <button class="btn" data-view="coverflow">Coverflow</button>
-          <button class="btn" data-view="directory">Directory</button>
-        </div>
 
         <div id="gallery">
           <div id="cover-arrows">
@@ -60,7 +89,7 @@
                 </div>
                 <div class="directory-actions">
                   <a class="btn" href="{% url 'user_page' ud.id %}">Open</a>
-                  <a class="btn default" href="{{ ud.ttf_file.url }}" download>Get</a>
+                  <a class="btn" href="{{ ud.ttf_file.url }}" download>Get</a>
                 </div>
               </div>
             </div>
@@ -72,6 +101,7 @@
             <div class="title-bar">
               <span class="close" aria-hidden="true"></span>
               <h1 class="title">{{ ud.font_name }}</h1>
+        <span class="zoom" aria-hidden="true"></span>
             </div>
             <div class="separator"></div>
             <div class="window-pane">
@@ -85,7 +115,6 @@
                   {% endif %}
                   <div class="profile-copy">
                     <a class="profile-name" href="{% url 'user_page' ud.id %}">@ {{ ud.user.username }}</a>
-                    <div class="muted">{{ ud.font_name }}</div>
                   </div>
                 </div>
                 <a class="btn" href="{{ ud.ttf_file.url }}" download>Get</a>
@@ -99,16 +128,10 @@
           <div class="empty-note"><p>No souls yet. Be the first to make a font.</p></div>
         {% endif %}
 
-        <hr class="divider">
-        <div class="center-row">
-          <button class="btn default" onclick="navigateWithFade('/create/')">Create My Font</button>
-          <button class="btn" onclick="navigateWithFade('/result/')">Change My Quote</button>
-        </div>
       </div>
     </div>
   </div>
 
-  <div class="site-foot">{{ users|length }} souls connected by SoulFont</div>
 
   
 {% endblock %}

@@ -3,20 +3,22 @@
 
 {% block title %}Password Reset{% endblock %}
 
+{% block app_name %}Finder{% endblock %}
+
 {% block content %}
   <div class="app">
-    <div class="window app-window narrow">
+    <div data-drag class="window app-window narrow">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
         <h1 class="title">Password Reset</h1>
+        <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
 
       <div class="window-pane" style="text-align:center;">
-        <h2 class="page-title">Sorry!</h2>
         <p class="lede">Password reset is not supported yet.</p>
         <div class="center-row">
-          <button class="btn default" onclick="navigateWithFade('{% url 'login' %}')">Back to Log In</button>
+          <button class="btn default" onclick="navigateWithFade('{% url 'login' %}')">Log In</button>
         </div>
       </div>
     </div>

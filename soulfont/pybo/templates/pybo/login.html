@@ -3,18 +3,19 @@
 
 {% block title %}Log In{% endblock %}
 
+{% block app_name %}Finder{% endblock %}
+
 {% block content %}
   <div class="app">
-    <div class="window app-window narrow">
+    <div data-drag class="window app-window narrow">
       <div class="title-bar">
-        <span class="close" aria-hidden="true"></span>
+        <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
         <h1 class="title">Log In</h1>
+        <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
 
       <div class="window-pane">
-        <h2 class="page-title">Sign in to SoulFont</h2>
-        <p class="lede">Feel Your Font.</p>
 
         {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
 
