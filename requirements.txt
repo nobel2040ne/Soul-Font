@@ -1,15 +1,35 @@
-torch
-torchvision
-pillow
-PyYAML
-tqdm
-scikit-image
-imageio
-matplotlib
-fire
-fonttools
-tensorboardX
-sconf
-pdf2image
-h5py
-gdown
+# Soul Font - full dependency list (Django app + DM-Font pipeline).
+#
+# Versions are pinned to what the project is developed and tested against on
+# Python 3.9. Several of these are the last releases to support 3.9, so do not
+# relax the pins without also moving to a newer interpreter.
+#
+# System dependency: Poppler is required by pdf2image (`brew install poppler`).
+
+# Web app
+Django==4.2.23
+
+# Model / training
+torch==2.7.1
+torchvision==0.22.1
+numpy==2.0.2
+tensorboardX==2.6.4
+
+# Image and glyph processing
+pillow==11.2.1
+scikit-image==0.24.0
+scipy==1.13.1
+pdf2image==1.17.0
+matplotlib==3.9.4
+
+# Font I/O
+fonttools==4.58.4
+
+# Data and config
+h5py==3.14.0
+PyYAML==6.0.2
+sconf==0.2.5
+
+# CLI / utilities
+fire==0.7.0
+tqdm==4.67.1
