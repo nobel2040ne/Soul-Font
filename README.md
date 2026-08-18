@@ -1,13 +1,3 @@
----
-title: Soul Font
-emoji: "✍️"
-colorFrom: gray
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Soul Font
 
 [![Python](https://img.shields.io/badge/Python-3.9-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
@@ -60,7 +50,7 @@ crop the template -> generate Hangul (DM-Font) -> clean the rasters
 
 `soulfont/foundry/` holds that pipeline, one file per step and in that order;
 `soulfont/pybo/` is the Django app; `dmfont/` is the upstream model code.
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the data model, the stages in detail and the disk
+[ARCHITECTURE.md](ARCHITECTURE.md) has the data model, the stages in detail and the disk
 layout. Two knobs are
 worth knowing: `SOUL_FONT_DEVICE=cpu` forces CPU inference and makes runs byte-reproducible,
 and `SOULFONT_STROKE_EVENNESS` (default `0.6`, `0` to disable) controls how much the model's
@@ -74,4 +64,3 @@ uneven stroke width is smoothed out.
 - No font appears — it builds in a background thread, so the reason is in the server log.
 
 Defaults are for local development: SQLite, `DEBUG = True`, and no password validation.
-[docs/DEPLOY.md](docs/DEPLOY.md) covers putting it online with the included Dockerfile.

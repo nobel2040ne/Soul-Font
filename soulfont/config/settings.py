@@ -19,18 +19,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# Every setting below reads an environment variable and falls back to the old local
-# default, so `manage.py runserver` on a laptop behaves exactly as it did while a
-# deployment configures itself entirely through the environment.
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = 'django-insecure-i3f4iyw_$a+596*=vexcwu37*gu0ponf91z!&5w^)du3&$-pcu'
 
-# The fallback is the key that has been committed to this repo since the project began.
-# Treat it as public: set DJANGO_SECRET_KEY anywhere the site is reachable.
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-i3f4iyw_$a+596*=vexcwu37*gu0ponf91z!&5w^)du3&$-pcu',
-)
-
-DEBUG = os.environ.get('DJANGO_DEBUG', '1').lower() not in ('0', 'false', 'no')
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
 
 # Application definition
 
@@ -78,15 +71,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Everything the app writes and must keep — the database and the generated fonts —
-# lives under one root, so a deployment can point it at a mounted volume. Unset, it is
-# the project directory and the layout is unchanged.
-DATA_DIR = Path(os.environ.get('SOULFONT_DATA_DIR', BASE_DIR))
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DATA_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',  
     }
 }
 
@@ -124,37 +112,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATIC_URL = '/static/'
 
-# The dev server serves static files itself; gunicorn does not, and there is no nginx in
-# front of it here. WhiteNoise fills that gap. Guarded so a virtualenv without it (any
-# checkout predating this) still starts — it is only needed off the dev server.
-try:
-    import whitenoise  # noqa: F401
-except ImportError:
-    pass
-else:
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    STORAGES = {
-        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-        # Compressed, but deliberately not the *manifest* variant: that one raises at
-        # request time if any file referenced from CSS is missing, which would take the
-        # whole site down over a stylesheet typo.
-        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
-    }
-
-ALLOWED_HOSTS = [h.strip() for h in
-                 os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
-
-# Django 4 rejects a cross-origin POST unless the origin is listed here, and behind a
-# platform's TLS terminator every POST looks cross-origin. Without this, logging in on
-# the deployed site fails with "CSRF verification failed" while working locally.
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in
-                        os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
-                        if o.strip()]
-
-# The proxy terminates TLS and forwards plain HTTP, so Django needs telling that the
-# original request was secure — otherwise it builds http:// redirects on an https:// site.
-if os.environ.get('DJANGO_BEHIND_PROXY', '').lower() in ('1', 'true', 'yes'):
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+ALLOWED_HOSTS = ['*', 'pythonanywhere.com', 'localhost', '10.171.24.201']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -163,4 +121,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 
-MEDIA_ROOT = os.path.join(DATA_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

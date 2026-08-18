@@ -33,9 +33,3 @@ sconf==0.2.5
 # CLI / utilities
 fire==0.7.0
 tqdm==4.67.1
-
-# Serving. Unused by `manage.py runserver`, needed by any real deployment: gunicorn is
-# the WSGI server, whitenoise serves static files (gunicorn will not, and there is no
-# nginx in the container).
-gunicorn==23.0.0
-whitenoise==6.9.0

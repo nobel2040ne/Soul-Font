@@ -15,8 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin #type: ignore
-from django.urls import path, include, re_path #type: ignore
-from django.views.static import serve #type: ignore
+from django.urls import path, include #type: ignore
 from django.views.generic import RedirectView #type: ignore
 from pybo import views
 from django.conf import settings #type: ignore
@@ -34,17 +33,6 @@ urlpatterns = [
     path('learning/', views.learning, name='learning'),
 ]
 
-# Generated fonts are served by Django itself, at any DEBUG setting.
-#
-# django.conf.urls.static.static() — used here before, and still used in pybo/urls.py —
-# returns an empty list whenever DEBUG is False. With debug off that silently left
-# /media/ unrouted: the TTFs existed on disk, but every @font-face URL on the gallery
-# and Letter pages 404'd, so the site came up looking like every font had failed.
-#
-# django.views.static.serve is not built for volume, and a real deployment behind nginx
-# or a CDN should let those handle /media/ instead. At this scale — one process, a few
-# font files per page — it is the difference between the site working and not.
-urlpatterns += [
-    re_path(r'^%s(?P<path>.*)$' % settings.MEDIA_URL.lstrip('/'),
-            serve, {'document_root': settings.MEDIA_ROOT}),
-]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
