@@ -1,0 +1,16 @@
+Galmuri11
+=========
+
+Copyright:   Copyright (c) 2019-2025 Lee Minseo (quiple@quiple.dev)
+Family:      Galmuri11 Regular
+Version:     Version 2.403;hotconv 1.1.1;makeotfexe 2.6.0 DEVELOPMENT
+Vendor URL:  https://quiple.dev
+Licence URL: https://openfontlicense.org
+
+Licence
+-------
+This font software is licensed under the SIL Open Font License 1.1.
+
+Vendored here as Galmuri11-latin.ttf and Galmuri11-kr.ttf, produced by subsetting
+the upstream Galmuri11.ttf by script (Latin/punctuation and Hangul respectively).
+No glyph outlines were altered.
