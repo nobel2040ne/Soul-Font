@@ -78,9 +78,6 @@ DATABASES = {
     }
 }
 
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
 # Unset, Django sends @login_required to /accounts/login/, which this project has never had —
 # so a signed-out visitor following a link to a font's page got a 404 instead of the log-in
 # window. The names are this app's own.
@@ -88,14 +85,9 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'desktop'
 
-# Was an empty list, so nothing was enforced and "abc" was an acceptable password.
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-     'OPTIONS': {'min_length': 8}},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
-]
+# Password validation — deliberately empty, so no strength rules are enforced on sign-up.
+# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+AUTH_PASSWORD_VALIDATORS = []
 
 
 # Internationalization
