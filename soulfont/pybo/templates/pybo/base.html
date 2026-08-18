@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static versioned_static %}<!DOCTYPE html>
 {% comment %}
 Shared page skeleton. Every page used to carry its own copy of this, which is how the
 boilerplate drifted apart — three spellings of charset, two doctypes and a stray
@@ -20,17 +20,119 @@ Blocks:
   Vendored rather than loaded from unpkg: .close and .separator have no local styles,
   so the whole window chrome used to depend on a third party being reachable.
   {% endcomment %}
-  <link rel="stylesheet" href="{% static 'vendor/system/system.css' %}">
+  {% comment %}
+  vstatic appends the file's mtime, so an edited stylesheet is fetched instead of being
+  served from the browser's heuristic cache. The dev server sends no ETag or
+  Cache-Control, so without this a CSS change looks like nothing happened until a
+  hard reload.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% vstatic 'vendor/system/system.css' %}">
   <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
-  <link rel="stylesheet" href="{% static 'css/retro.css' %}">
+  <link rel="stylesheet" href="{% vstatic 'css/retro.css' %}">
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}desktop{% endblock %}">
-  {% include 'pybo/_menubar.html' %}
+  {% comment %}
+  System 7 menu bar: titles pull down, command keys sit right-aligned, separators are dotted
+  rules, and items you cannot use are greyed rather than removed. That last rule is why
+  "Download Family" stays visible when you have no font yet — the era told you a thing exists
+  before it told you that you cannot do it.
+  {% endcomment %}
+  {% comment %}
+  System 7's menu bar belongs to whichever application is frontmost: the Apple menu on the
+  left, that application's own menus next, and the Application menu on the far right for
+  switching between what is running. Each page here is an application, so it names itself
+  in `app_name` and hangs its menus in `app_menus`; everything else is the shell.
+  {% endcomment %}
+  <div class="menu-bar">
+    <a class="wordmark" href="{% url 'desktop' %}">SOULFONT</a>
+
+    {% comment %} the frontmost application's own menus {% endcomment %}
+    <span class="app-menus" data-app-menus>
+    {% block app_menus %}
+    <span class="mb-menu" data-menu>
+      <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">File</span>
+      <ul role="menu">
+        <li role="menuitem" data-go="{% url 'create_font' %}">New Font<span class="key">N</span></li>
+        {% if request.user.is_authenticated %}
+          <li role="menuitem" data-go="{% url 'my_page' %}">Open My Page<span class="key">O</span></li>
+        {% else %}
+          <li role="menuitem" class="off" aria-disabled="true">Open My Page<span class="key">O</span></li>
+        {% endif %}
+        <li class="sep" role="separator"></li>
+        <li role="menuitem" data-go="{% url 'download_template' %}">Get Template<span class="key">T</span></li>
+      </ul>
+    </span>
+    {% endblock %}
+    </span>
+
+    <span class="mb-menu" data-menu id="patternMenu">
+      <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">Desktop</span>
+      <ul role="menu" aria-label="Desktop pattern">
+        <li role="menuitemradio" data-pattern="gray">50% Gray</li>
+        <li role="menuitemradio" data-pattern="weave">Blue Weave</li>
+        <li role="menuitemradio" data-pattern="hatch">Hatch</li>
+        <li role="menuitemradio" data-pattern="dots">Dots</li>
+        <li role="menuitemradio" data-pattern="paper">Paper</li>
+        <li role="menuitemradio" data-pattern="midnight">Midnight</li>
+      </ul>
+    </span>
+
+    <span class="spacer"></span>
+
+    {% if request.user.is_authenticated %}
+      <span class="mb-menu" data-menu>
+        <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">{{ request.user.username }}</span>
+        <ul role="menu">
+          <li role="menuitem" data-go="{% url 'my_page' %}">My Page</li>
+          {% if request.user.is_staff %}
+            <li role="menuitem" data-go="{% url 'admin:index' %}">Admin</li>
+          {% endif %}
+          <li class="sep" role="separator"></li>
+          <li role="menuitem" data-go="{% url 'logout' %}">Log Out</li>
+        </ul>
+      </span>
+    {% else %}
+      <a href="{% url 'login' %}">Log&nbsp;In</a>
+    {% endif %}
+
+    {% comment %}
+    The Application menu. In System 7 this sat at the far right, showed the frontmost
+    application's name, and listed everything running so you could switch. Here the list is
+    the applications this site has, and the tick marks the one you are in. The tick reads
+    the resolved URL name, so a page becomes an application by being routed rather than by
+    every view having to remember to say which one it is.
+    {% endcomment %}
+    {% with here=request.resolver_match.url_name %}
+    <span class="mb-menu app-menu" data-menu>
+      <span class="mb-item" role="button" tabindex="0" aria-haspopup="true"
+            aria-expanded="false"><span class="app-icon" aria-hidden="true"></span><span data-app-name>{% block app_name %}Finder{% endblock %}</span></span>
+      <ul role="menu" aria-label="Applications">
+        <li role="menuitemradio" data-go="{% url 'desktop' %}"
+            {% if here == 'desktop' %}aria-checked="true"{% endif %}>Finder</li>
+        <li class="sep" role="separator"></li>
+        <li role="menuitemradio" data-go="{% url 'index' %}"
+            {% if here == 'index' %}aria-checked="true"{% endif %}>Fonts</li>
+        <li role="menuitemradio" data-go="{% url 'letter' %}"
+            {% if here == 'letter' %}aria-checked="true"{% endif %}>Letter</li>
+        <li role="menuitemradio" data-go="{% url 'create_font' %}"
+            {% if here == 'create_font' or here == 'learning' %}aria-checked="true"{% endif %}>New Font</li>
+        {% if request.user.is_authenticated %}
+          <li role="menuitemradio" data-go="{% url 'my_page' %}"
+              {% if here == 'my_page' or here == 'user_page' or here == 'font_editor' %}aria-checked="true"{% endif %}>My Fonts</li>
+        {% endif %}
+        <li class="sep" role="separator"></li>
+        <li role="menuitemradio" data-go="{% url 'about' %}"
+            {% if here == 'about' %}aria-checked="true"{% endif %}>About</li>
+      </ul>
+    </span>
+    {% endwith %}
+  </div>
 
   {% block content %}{% endblock %}
 
-  <script src="{% static 'js/retro.js' %}"></script>
+  <script src="{% vstatic 'js/retro.js' %}"></script>
+  <script src="{% vstatic 'js/system7.js' %}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

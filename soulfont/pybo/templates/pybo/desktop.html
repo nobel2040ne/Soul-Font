@@ -1,0 +1,209 @@
+{% extends 'pybo/base.html' %}
+{% load static %}
+
+{% block title %}Desktop{% endblock %}
+
+{% block app_name %}Finder{% endblock %}
+
+{% block app_menus %}
+  {% comment %}
+  The Finder's own menus. File acts on what is selected in the disk window, which is why Open
+  starts out greyed: System 7 showed you a command existed before it told you that you could
+  not use it yet.
+  {% endcomment %}
+  <span class="mb-menu" data-menu>
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">File</span>
+    <ul role="menu">
+      <li role="menuitem" class="off" aria-disabled="true" id="fileOpen">Open<span class="key">O</span></li>
+      <li class="sep" role="separator"></li>
+      <li role="menuitem" data-go="{% url 'create_font' %}">New Font<span class="key">N</span></li>
+      <li role="menuitem" data-go="{% url 'download_template' %}">Get Template<span class="key">T</span></li>
+    </ul>
+  </span>
+
+  <span class="mb-menu" data-menu>
+    <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">Edit</span>
+    <ul role="menu">
+      <li role="menuitem" class="off" aria-disabled="true">Undo<span class="key">Z</span></li>
+      <li class="sep" role="separator"></li>
+      <li role="menuitem" class="off" aria-disabled="true">Cut<span class="key">X</span></li>
+      <li role="menuitem" class="off" aria-disabled="true">Copy<span class="key">C</span></li>
+      <li role="menuitem" id="editSelectAll">Select All<span class="key">A</span></li>
+    </ul>
+  </span>
+{% endblock %}
+
+{% block content %}
+  {% comment %}
+  The disk window. Applications are icons in it and you open one by double-clicking, the same
+  as the machine this is modelled on — so the site reads as a small system with a few programs
+  rather than a navigation bar with pages behind it.
+  {% endcomment %}
+  <div id="desk">
+    <div class="window desk-window">
+      <div class="title-bar">
+        <span class="close" aria-label="Close window" role="button" tabindex="0"></span>
+        <h1 class="title">Soul Font</h1>
+        <span class="zoom" aria-hidden="true"></span>
+      </div>
+      <div class="separator"></div>
+
+      {% comment %} the Finder's header line: how much is in here, and how much room is left {% endcomment %}
+      <div class="folder-info">
+        <span id="itemCount">&mdash;</span>
+        <span>{{ font_count }} font{{ font_count|pluralize }} on disk</span>
+        <span class="fi-hint">Double-click an icon to open it</span>
+      </div>
+      <div class="separator"></div>
+
+      <ul class="icon-grid" id="iconGrid" role="listbox" aria-label="Applications">
+        <li>
+          <a class="desk-icon" href="{% url 'index' %}" role="option" aria-selected="false">
+            <span class="di-glyph i-app-soulfont" aria-hidden="true"></span>
+            <span class="di-name">Fonts</span>
+          </a>
+        </li>
+        <li>
+          <a class="desk-icon" href="{% url 'letter' %}" role="option" aria-selected="false">
+            <span class="di-glyph i-app-letter" aria-hidden="true"></span>
+            <span class="di-name">Letter</span>
+          </a>
+        </li>
+        <li>
+          <a class="desk-icon" href="{% url 'create_font' %}" role="option" aria-selected="false">
+            <span class="di-glyph i-app-maker" aria-hidden="true"></span>
+            <span class="di-name">New Font</span>
+          </a>
+        </li>
+        <li>
+          <a class="desk-icon" href="{% if request.user.is_authenticated %}{% url 'my_page' %}{% else %}{% url 'login' %}{% endif %}"
+             role="option" aria-selected="false">
+            <span class="di-glyph i-app-folder" aria-hidden="true"></span>
+            <span class="di-name">My Fonts{% if my_count %} ({{ my_count }}){% endif %}</span>
+          </a>
+        </li>
+        <li>
+          <a class="desk-icon" href="{% url 'about' %}" role="option" aria-selected="false">
+            <span class="di-glyph i-app-mac" aria-hidden="true"></span>
+            <span class="di-name">About</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    {% comment %}
+    The disk this all lives on, and the Trash, in the corners they always sat in. Both are on
+    the desk itself, so windows stack over them.
+    {% endcomment %}
+    <button class="desk-shortcut disk-icon" type="button" id="diskIcon" aria-label="Open Soul Font">
+      <span class="di-glyph i-app-disk" aria-hidden="true"></span>
+      <span class="di-name">Soul Font</span>
+    </button>
+
+    <button class="desk-shortcut trash-can" type="button" id="trashCan" aria-label="Trash">
+      <span class="di-glyph i-app-trash" aria-hidden="true"></span>
+      <span class="di-name">Trash</span>
+    </button>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    (function () {
+      // Everything here is delegated rather than bound to the elements that exist right now.
+      // The menu bar is rebuilt whenever the frontmost window changes, and the Finder's window
+      // can be closed and re-opened from the disk, so anything bound directly stops working
+      // the first time either happens.
+      var desk = document.getElementById('desk');
+      if (!desk) return;
+
+      function icons() {
+        return Array.prototype.slice.call(desk.querySelectorAll('#iconGrid .desk-icon'));
+      }
+
+      function select(icon) {
+        icons().forEach(function (i) {
+          var on = i === icon;
+          i.classList.toggle('sel', on);
+          i.setAttribute('aria-selected', String(on));
+        });
+        var open = document.getElementById('fileOpen');
+        if (open) {
+          open.classList.toggle('off', !icon);
+          open.setAttribute('aria-disabled', String(!icon));
+          open.dataset.go = icon ? icon.getAttribute('href') : '';
+        }
+      }
+
+      // Opening puts a window on the desk. Without the window manager these are still plain
+      // links and still work, one page at a time.
+      function launch(href) {
+        if (!href) return;
+        if (window.SoulSystem) SoulSystem.open(href);
+        else window.location.href = href;
+      }
+
+      // One click selects, two open. Both are stopped here: the window manager treats an <a>
+      // inside a window as a link to follow, and without this it opened the application on the
+      // selection click.
+      desk.addEventListener('click', function (e) {
+        var icon = e.target.closest('.desk-icon');
+        if (!icon) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.detail > 1) return;
+        select(icon);
+      });
+      desk.addEventListener('dblclick', function (e) {
+        var icon = e.target.closest('.desk-icon');
+        if (icon) { e.preventDefault(); e.stopPropagation(); launch(icon.getAttribute('href')); return; }
+
+        if (e.target.closest('#trashCan')) {
+          if (window.sfAlert) sfAlert('The Trash is empty.');
+          return;
+        }
+        if (e.target.closest('#diskIcon')) reopenFinder();
+      });
+
+      // File > Open and Edit > Select All live in the menu bar, which is rebuilt on every
+      // change of frontmost window, so they are matched by id at click time.
+      document.addEventListener('click', function (e) {
+        var item = e.target.closest('#fileOpen, #editSelectAll');
+        if (!item) return;
+        if (item.id === 'fileOpen') { if (item.dataset.go) launch(item.dataset.go); }
+        else select(icons()[0]);
+      });
+
+      document.addEventListener('keydown', function (e) {
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        if (e.key === 'Enter') {
+          var sel = desk.querySelector('#iconGrid .desk-icon.sel');
+          if (sel) { e.preventDefault(); launch(sel.getAttribute('href')); }
+        }
+      });
+
+      var count = document.getElementById('itemCount');
+      if (count) count.textContent = icons().length + ' item' + (icons().length === 1 ? '' : 's');
+
+      // The disk puts a Finder window back after you close it, which is the whole reason the
+      // Finder let you close one. Cloned before anything can change it.
+      var blank = (function () {
+        var f = desk.querySelector('.window.desk-window');
+        return f ? f.cloneNode(true) : null;
+      })();
+      function reopenFinder() {
+        if (!blank) return;
+        if (!window.SoulSystem) { window.location.reload(); return; }
+        if (desk.querySelector('.window.desk-window')) return;   // already showing
+        var fresh = blank.cloneNode(true);
+        fresh.removeAttribute('style');
+        SoulSystem.adopt(fresh, 'Finder');
+      }
+      var disk = document.getElementById('diskIcon');
+      if (disk) disk.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reopenFinder(); }
+      });
+    })();
+  </script>
+{% endblock %}

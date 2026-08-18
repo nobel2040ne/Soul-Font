@@ -28,6 +28,17 @@ FULL_CHARSET = os.path.join(settings.BASE_DIR, 'data', 'charset', 'korean11172.t
 
 DEFAULT_TTF = 'ttf_files/MaruBuri-Regular.ttf'  # placeholder until a font is generated
 
+def desktop(request):
+    """The Finder. Applications live in a disk window you open them from, which is what the
+    site is: a small system with a handful of programs in it rather than a set of pages."""
+    return render(request, 'pybo/desktop.html', {
+        'font_count': (UserData.objects.exclude(ttf_file=DEFAULT_TTF)
+                       .exclude(ttf_file='').count()),
+        'my_count': (UserData.objects.filter(user=request.user).count()
+                     if request.user.is_authenticated else 0),
+    })
+
+
 def index(request):
     # Home shows one card per generated font the owner has opted to display.
     users = (UserData.objects.select_related('user')
@@ -39,14 +50,16 @@ def index(request):
     return render(request, 'pybo/index.html', {'fonts': fonts, 'users': users})
 
 def signup_view(request):
+    # Both paths use the same form. The POST path used to build a plain UserCreationForm,
+    # which has no first_name/last_name — so the page asked for a name, marked it required,
+    # and then silently dropped it. Every account created that way has an empty name.
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect('index')
-        else:
-            print(form.errors)
+        # falls through to render the bound form, so the template can show what went wrong
     else:
         form = CustomUserCreationForm()
     return render(request, 'pybo/signup.html', {'form': form})
@@ -98,12 +111,27 @@ def user_page(request, font_id):
     # are looking at are the ones you change.
     if request.method == 'POST' and is_owner and 'save_metadata' in request.POST:
         save_font_metadata(user_data, request.POST)
+
+        # Quote and picture used to be editable only on result.html, which nothing linked to.
+        # They belong with the rest of the font's details, so the save handles them here.
+        if 'quote' in request.POST:
+            user_data.quote = request.POST.get('quote', '').strip()
+
+        if request.POST.get('remove_profile_image') and user_data.profile_image:
+            user_data.profile_image.delete(save=False)
+            user_data.profile_image = None
+
+        picture = request.FILES.get('profile_image')
+        if picture:
+            if user_data.profile_image:
+                user_data.profile_image.delete(save=False)
+            user_data.profile_image = picture
+
         user_data.save()
         restamp_font_files(user_data)
         return redirect('user_page', font_id=user_data.id)
 
-    templates = user_data.templates.all()[:3]
-    # All of the owner's fonts, for the "your fonts" button row.
+    # All of the owner's fonts, for the switcher at the top of the window.
     user_fonts = user_data.user.fonts.order_by('-created_at', '-id')
     context = {
         'user_data': user_data,
@@ -112,7 +140,6 @@ def user_page(request, font_id):
         'user_fonts': user_fonts,
         'font_name': user_data.font_name,
         'profile_image': user_data.profile_image,
-        'templates': templates,
         'ttf_file': user_data.ttf_file,
         'ttf_file_light': user_data.ttf_file_light,
         'ttf_file_bold': user_data.ttf_file_bold,
@@ -124,7 +151,17 @@ def user_page(request, font_id):
     return render(request, 'pybo/user_page.html', context)
 
 def create_font(request):
-    return render(request, 'pybo/create_font.html')
+    # The name field starts filled rather than empty. Every font used to be created as the
+    # placeholder because the page never asked, and nothing in the app could rename it.
+    suggested = DEFAULT_FONT_NAME
+    if request.user.is_authenticated:
+        taken = set(request.user.fonts.values_list('font_name', flat=True))
+        if suggested in taken:
+            n = 2
+            while f'{suggested} {n}' in taken:
+                n += 1
+            suggested = f'{suggested} {n}'
+    return render(request, 'pybo/create_font.html', {'suggested_name': suggested})
 
 def _clamp_int(value, default, low, high):
     try:
@@ -281,55 +318,6 @@ def letter(request):
 
 def about(request):
     return render(request, 'pybo/about.html')
-
-@login_required
-def result(request, font_id=None):
-    # Edit one specific font. With no id we fall back to the user's most recent font,
-    # creating an empty one only if they have none yet.
-    if font_id is not None:
-        user_data = get_object_or_404(UserData, id=font_id, user=request.user)
-    else:
-        user_data = request.user.fonts.order_by('-created_at', '-id').first()
-        if user_data is None:
-            user_data = UserData.objects.create(user=request.user)
-
-    if request.method == 'POST':
-        new_name = request.POST.get('font_name', '').strip()
-        user_data.font_name = new_name
-        user_data.quote = request.POST.get('quote', '').strip()
-        user_data.author = request.POST.get('author', '').strip()
-        user_data.copyright = request.POST.get('copyright', '').strip()
-        user_data.license_text = request.POST.get('license_text', '').strip()
-        user_data.license_url = request.POST.get('license_url', '').strip()
-        user_data.description = request.POST.get('description', '').strip()
-        user_data.version = request.POST.get('version', '').strip() or '1.000'
-
-        if request.POST.get('remove_profile_image') and user_data.profile_image:
-            user_data.profile_image.delete(save=False)
-            user_data.profile_image = None
-
-        profile_image = request.FILES.get('profile_image')
-        if profile_image:
-            if user_data.profile_image:
-                user_data.profile_image.delete(save=False)
-            user_data.profile_image = profile_image
-
-        user_data.save()
-
-        restamp_font_files(user_data)
-        return redirect('user_page', font_id=user_data.id)
-
-    context = {
-        'user_data': user_data,
-        'font_name': user_data.font_name,
-        'quote': user_data.quote,
-        'ttf_file': user_data.ttf_file,
-        'ttf_file_light': user_data.ttf_file_light,
-        'ttf_file_bold': user_data.ttf_file_bold,
-        'fonts': Font.objects.all().order_by('-id')
-    }
-
-    return render(request, 'pybo/result.html', context)
 
 def download_template(request):
     file_path = os.path.join(settings.STATICFILES_DIRS[0], 'templates', '28_template.pdf')
@@ -662,7 +650,8 @@ def learning(request):
         # TTF on this exact row, so a user's fonts never overwrite one another.
         # 'pending' until the thread picks it up — the page must not show the bundled
         # placeholder font as if it were this user's handwriting.
-        font = UserData.objects.create(user=request.user, font_name=DEFAULT_FONT_NAME,
+        font_name = request.POST.get('font_name', '').strip() or DEFAULT_FONT_NAME
+        font = UserData.objects.create(user=request.user, font_name=font_name,
                                        status=UserData.STATUS_PENDING,
                                        status_stage='Queued', status_percent=0)
         # A user's first font becomes their Home font automatically; later ones don't.
@@ -676,12 +665,9 @@ def learning(request):
             daemon=True
         ).start()
 
-        return render(request, "pybo/result.html", {
-            "user_id": request.user.id,
-            "user_data": font,
-            "font_name": font.font_name,
-            "quote": font.quote,
-        })
+        # Straight to the font's own window, where _progress.html polls the build. This used
+        # to render result.html, a page nothing else linked to.
+        return redirect('user_page', font_id=font.id)
 
     # GET (or a POST with no file): show the upload page. This used to name a
     # 'pybo/create.html' that has never existed in the repo, so any GET here 500'd.

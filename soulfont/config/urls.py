@@ -22,7 +22,7 @@ from django.conf import settings #type: ignore
 from django.conf.urls.static import static #type: ignore
 
 urlpatterns = [
-    path('', RedirectView.as_view(pattern_name='index', permanent=False)),
+    path('', RedirectView.as_view(pattern_name='desktop', permanent=False)),
     path('admin/', admin.site.urls),
     path('pybo/', include('pybo.urls')),
     path('signup/', views.signup_view, name='signup'),
@@ -31,7 +31,6 @@ urlpatterns = [
     path('create/', views.create_font, name='create_font'),
     path('letter/', views.letter, name='letter'),
     path('learning/', views.learning, name='learning'),
-    path('result/', views.result, name='result'),
 ]
 
 if settings.DEBUG:

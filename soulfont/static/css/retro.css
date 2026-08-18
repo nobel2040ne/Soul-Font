@@ -15,11 +15,11 @@
              the product, so they get their own ladder and are free to be large.
 
      Every value below was already somewhere in the design; nothing new was invented. */
-  --ui-xs: 11px;   /* muted meta, captions, hints           */
-  --ui-sm: 13px;   /* default UI: labels, card titles, menu */
-  --ui-md: 15px;   /* body copy                             */
-  --ui-lg: 18px;   /* sub-headings, avatar initials         */
-  --ui-xl: 24px;   /* page titles, large avatar             */
+  --ui-xs:  9px;   /* Galmuri9  native  — smallest labels    */
+  --ui-sm: 11px;   /* Galmuri11 native  — chrome, buttons     */
+  --ui-md: 14px;   /* Galmuri14 native  — body copy           */
+  --ui-lg: 22px;   /* Galmuri11 x2      — sub-headings        */
+  --ui-xl: 28px;   /* Galmuri14 x2      — page titles         */
 
   --spec-sm: 20px;                          /* letter body, signature       */
   --spec-md: 30px;                          /* font chip                    */
@@ -29,31 +29,87 @@
   --spec-xl: 48px;                          /* try-it-out stage             */
 }
 
-/* ---------- readable text, retro chrome ----------
-   system.css sets the window body in Inconsolata (a monospace coding face) and every
-   button in the Chicago_12 bitmap. Neither contains a single Hangul syllable — checked:
-   0 of 11,172 in all three bundled faces — so Korean fell out to an unpredictable
-   fallback mid-sentence while Latin stayed pixelated.
+/* ---------- typefaces ----------
+   Galmuri is a bitmap family: each cut is drawn on a fixed pixel grid, so it is only
+   crisp at its own design size and whole multiples of it. The previous scale was
+   11/13/15/18/24 against an 11px face, so four of five steps landed off-grid and each
+   rendered at a different degree of blur. That is why the sizes looked unrelated.
 
-   Chrome keeps the classic look, because that is the identity. Anything you actually
-   read is a system sans with an explicit Korean face behind it. */
+   Every step below is a native size of the cut it uses:
+     9px   Galmuri9        22px  Galmuri11 x2
+     11px  Galmuri11       28px  Galmuri14 x2
+     14px  Galmuri14
+   Nothing is interpolated, so every size is equally sharp.
+
+   All three cover Latin and all 11,172 Hangul syllables. SIL OFL, see NOTICE.txt.
+   Split by script so the 2.4 MB Korean cut only downloads when Korean is on the page. */
+@font-face {
+  font-family: 'Galmuri9';
+  src: url('../vendor/galmuri/Galmuri9-latin.ttf') format('truetype');
+  unicode-range: U+0020-007E, U+00A0-00FF, U+2013, U+2014, U+2018-201D, U+2026, U+2318, U+00B7;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Galmuri9';
+  src: url('../vendor/galmuri/Galmuri9-kr.ttf') format('truetype');
+  unicode-range: U+1100-11FF, U+3000-303F, U+3131-318E, U+AC00-D7A3;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Galmuri11';
+  src: url('../vendor/galmuri/Galmuri11-latin.ttf') format('truetype');
+  unicode-range: U+0020-007E, U+00A0-00FF, U+2013, U+2014, U+2018-201D, U+2026, U+2318, U+00B7;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Galmuri11';
+  src: url('../vendor/galmuri/Galmuri11-kr.ttf') format('truetype');
+  unicode-range: U+1100-11FF, U+3000-303F, U+3131-318E, U+AC00-D7A3;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Galmuri14';
+  src: url('../vendor/galmuri/Galmuri14-latin.ttf') format('truetype');
+  unicode-range: U+0020-007E, U+00A0-00FF, U+2013, U+2014, U+2018-201D, U+2026, U+2318, U+00B7;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Galmuri14';
+  src: url('../vendor/galmuri/Galmuri14-kr.ttf') format('truetype');
+  unicode-range: U+1100-11FF, U+3000-303F, U+3131-318E, U+AC00-D7A3;
+  font-display: swap;
+}
+
 :root {
-  --font-ui: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --font-chrome: Chicago_12, Chicago, "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-9:  'Galmuri9', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-11: 'Galmuri11', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-14: 'Galmuri14', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-ui: var(--font-14);
+  --font-chrome: var(--font-11);
 }
-body.desktop .window,
-body.desktop .window-pane,
-body.desktop form,
-body.desktop input,
-body.desktop textarea,
-body.desktop select,
-body.desktop .btn,
-body.desktop button {
+body.desktop,
+body.desktop .window, body.desktop .window-pane,
+body.desktop form, body.desktop input, body.desktop textarea, body.desktop select,
+body.desktop button, body.desktop .btn, body.desktop .file-picker-button,
+body.desktop h1, body.desktop h2, body.desktop h3,
+body.desktop p, body.desktop label, body.desktop li, body.desktop td, body.desktop th {
   font-family: var(--font-ui);
-  letter-spacing: normal;          /* system.css tightens to -.025em, which hurts Hangul */
+  font-size: var(--ui-md);
+  letter-spacing: normal;      /* system.css tightens to -.025em, which hurts Hangul */
 }
-body.desktop .menu-bar,
-body.desktop .title-bar .title { font-family: var(--font-chrome); }
+/* the 11px cut carries the chrome and anything set at 11 or 22 */
+body.desktop .menu-bar, body.desktop .title-bar .title,
+body.desktop .listview, body.desktop .btn, body.desktop .file-picker-button {
+  font-family: var(--font-chrome);
+}
+/* the 9px cut, for the smallest labels only */
+body.desktop .hint, body.desktop .muted, body.desktop .meta-row,
+body.desktop .of-label, body.desktop .lv-head {
+  font-family: var(--font-9);
+  font-size: var(--ui-xs);
+}
+/* A pixel face has no true italic; asking for one produces a smeared synthetic. */
+body.desktop em, body.desktop i { font-style: normal; text-decoration: underline; }
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
@@ -65,13 +121,123 @@ body.desktop [hidden] { display: none !important; }
 
 body.desktop {
   min-height: 100vh;
-  /* classic 50% gray desktop dither */
+  padding-top: 26px;            /* clear the menu bar */
+  box-sizing: border-box;
   background-color: #b9b9b9;
   background-image: repeating-conic-gradient(#a6a6a6 0% 25%, #cfcfcf 0% 50%);
   background-size: 4px 4px;
-  padding-top: 26px;            /* clear the menu bar */
-  box-sizing: border-box;
 }
+
+/* ---------- desktop patterns ----------
+   The classic Mac shipped a Control Panel of these, so the app has one too. Each is a
+   real dither at 1:1 pixel scale rather than a smooth gradient, which is what makes the
+   era read correctly. Set by data-pattern on <body>; the default above is 50% Gray, so
+   the page still looks right with JavaScript off. */
+body.desktop[data-pattern="gray"] {
+  background-color: #b9b9b9;
+  background-image: repeating-conic-gradient(#a6a6a6 0% 25%, #cfcfcf 0% 50%);
+  background-size: 4px 4px;
+}
+body.desktop[data-pattern="weave"] {
+  background-color: #8fa4bf;
+  background-image:
+    repeating-linear-gradient(90deg, #7d94b3 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(0deg, #a3b5cd 0 2px, transparent 2px 4px);
+  background-size: 4px 4px;
+}
+body.desktop[data-pattern="hatch"] {
+  background-color: #c4c4c4;
+  background-image: repeating-linear-gradient(45deg, #9a9a9a 0 1px, transparent 1px 5px);
+  background-size: 6px 6px;
+}
+body.desktop[data-pattern="dots"] {
+  background-color: #cdcdcd;
+  background-image: radial-gradient(#8c8c8c 1px, transparent 1.2px);
+  background-size: 6px 6px;
+}
+body.desktop[data-pattern="paper"] {
+  background-color: #efece4;
+  background-image: radial-gradient(#ded9cc 1px, transparent 1.2px);
+  background-size: 5px 5px;
+}
+body.desktop[data-pattern="midnight"] {
+  background-color: #2b2b2b;
+  background-image: repeating-conic-gradient(#242424 0% 25%, #343434 0% 50%);
+  background-size: 4px 4px;
+}
+
+/* ---------- pull-down menus ----------
+   Titles highlight when open, items invert on hover, command keys sit right-aligned, and
+   separators are the dotted rule System 7 used. Unavailable items are greyed in place. */
+/* The menu title has to fill the bar's height, or its highlight stops short of the edges
+   and the label is centred against its own text box instead of against the bar. That means
+   the wrapper stretches too — it is the flex child, not the title inside it. */
+.menu-bar .mb-menu {
+  position: relative;
+  display: inline-flex; align-self: stretch;
+}
+.menu-bar .mb-menu > .mb-item {
+  display: inline-flex; align-items: center; align-self: stretch;
+  padding: 1.25px 8px 0; line-height: 1;
+}
+/* Flex centres the line box; it cannot centre the glyphs inside it. Galmuri reserves a full
+   1.0em above the baseline against only 0.2em below, so the ink sits high in its own box.
+   The figure below is measured, not derived: rendered at 4x and counted in pixels, the ink
+   sat 2.75px from the top and 4.00px from the bottom of the bar's 20px content box, i.e.
+   1.62px high. Deriving it from the metrics alone gave 0.94px and left it visibly off. */
+.menu-bar .mb-menu[open] > .mb-item { background: #000; color: #fff; }
+.menu-bar .mb-menu ul {
+  display: none; position: absolute; top: 22px; left: 0; z-index: 1200;
+  margin: 0; padding: 2px 0; list-style: none; min-width: 196px;
+  background: #fff; border: 1px solid var(--mac-line);
+  box-shadow: 2px 2px 0 var(--mac-line);
+}
+/* Only a menu at the right-hand end needs its list right-aligned, and "last of type" now
+   also picks the last menu inside the app-menus wrapper, whose list belongs on the left. */
+.menu-bar > .mb-menu:last-of-type ul,
+.menu-bar .app-menu ul { left: auto; right: 0; }
+.menu-bar .app-menus { display: contents; }
+.menu-bar .mb-menu[open] ul { display: block; }
+.menu-bar .mb-menu li {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 2px 12px; cursor: pointer; white-space: nowrap;
+  font-family: var(--font-chrome); font-size: var(--ui-md); line-height: 1.5;
+}
+.menu-bar .mb-menu li:hover:not(.sep):not(.off) { background: #000; color: #fff; }
+/* Command keys.
+   Chicago contains no U+2318, no U+F8FF and no U+2713 — checked, all three are absent —
+   so every one of those characters was falling back to a different face at a different
+   size and baseline. That is what made the shortcuts sit crooked against their labels.
+   They are drawn here instead, as masked SVG, so they take currentColor and invert with
+   the row. The key column is a fixed width so the letters line up down the menu. */
+.menu-bar .mb-menu li .key {
+  display: inline-flex; align-items: center; gap: 1px;
+  flex: 0 0 auto; min-width: 30px; justify-content: flex-end;
+  font-family: var(--font-chrome); font-size: var(--ui-sm); color: #666;
+}
+.menu-bar .mb-menu li .key::before {
+  content: ""; width: 13px; height: 13px; flex: 0 0 auto;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2016%2016%22><path%20d=%22M6.2%206.2h3.6v3.6H6.2zM6.2%206.2V4.4a1.8%201.8%200%201%200-1.8%201.8h1.8M9.8%206.2V4.4a1.8%201.8%200%201%201%201.8%201.8H9.8M6.2%209.8v1.8a1.8%201.8%200%201%201-1.8-1.8h1.8M9.8%209.8v1.8a1.8%201.8%200%201%200%201.8-1.8H9.8%22%20fill=%22none%22%20stroke=%22black%22%20stroke-width=%221.3%22/></svg>") no-repeat center / contain;
+  mask: url("data:image/svg+xml,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2016%2016%22><path%20d=%22M6.2%206.2h3.6v3.6H6.2zM6.2%206.2V4.4a1.8%201.8%200%201%200-1.8%201.8h1.8M9.8%206.2V4.4a1.8%201.8%200%201%201%201.8%201.8H9.8M6.2%209.8v1.8a1.8%201.8%200%201%201-1.8-1.8h1.8M9.8%209.8v1.8a1.8%201.8%200%201%200%201.8-1.8H9.8%22%20fill=%22none%22%20stroke=%22black%22%20stroke-width=%221.3%22/></svg>") no-repeat center / contain;
+}
+.menu-bar .mb-menu li:hover:not(.sep):not(.off) .key { color: #fff; }
+.menu-bar .mb-menu li.off { color: #9b9b9b; cursor: default; }
+.menu-bar .mb-menu li.off .key { color: #c2c2c2; }
+.menu-bar .mb-menu li.sep {
+  height: 1px; padding: 0; margin: 3px 0; cursor: default;
+  background: repeating-linear-gradient(90deg, var(--mac-line) 0 1px, transparent 1px 2px);
+}
+.menu-bar .mb-menu li[role="menuitemradio"]::before {
+  content: ""; width: 13px; height: 13px; flex: 0 0 auto; margin-right: 4px;
+  background-color: transparent;
+}
+.menu-bar .mb-menu li[aria-checked="true"]::before {
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2016%2016%22><path%20d=%22M3%208.6l3.2%203.4L13%204.6%22%20fill=%22none%22%20stroke=%22black%22%20stroke-width=%222%22%20stroke-linecap=%22square%22/></svg>") no-repeat center / contain;
+  mask: url("data:image/svg+xml,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2016%2016%22><path%20d=%22M3%208.6l3.2%203.4L13%204.6%22%20fill=%22none%22%20stroke=%22black%22%20stroke-width=%222%22%20stroke-linecap=%22square%22/></svg>") no-repeat center / contain;
+}
+.menu-bar .mb-menu li[role="menuitemradio"] { justify-content: flex-start; }
 
 /* ---------- classic menu bar ---------- */
 .menu-bar {
@@ -82,14 +248,53 @@ body.desktop {
   border-bottom: 2px solid var(--mac-line);
   font-size: var(--ui-md);
 }
-.menu-bar .apple { font-weight: bold; }
+/* The Apple logo lived at U+F8FF, a private-use codepoint that only resolves on Apple
+   hardware and is absent from the chrome face anyway. The site's name goes here instead. */
+.menu-bar .wordmark {
+  flex: 0 0 auto; font-weight: 700; letter-spacing: .06em;
+  padding: 1.25px 8px 0 2px; text-decoration: none; color: #000;
+}
+.menu-bar .wordmark:hover { background: #000; color: #fff; }
 .menu-bar .brand { font-weight: bold; margin-right: 6px; }
-.menu-bar a, .menu-bar .mb-item {
-  color: #000; text-decoration: none; cursor: pointer; line-height: 22px;
-  padding: 0 6px;
+/* Each item is its own flex box filling the bar's height, so the glyphs are centred by
+   layout rather than by a line-height that happened to equal the bar height — which left
+   them sitting low, because a bitmap face's ascent and descent are not symmetrical. */
+.menu-bar a, .menu-bar .mb-item, .menu-bar .wordmark {
+  display: inline-flex; align-items: center; align-self: stretch;
+  color: #000; text-decoration: none; cursor: pointer;
+  line-height: 1; padding: 1.25px 6px 0;
 }
 .menu-bar a:hover, .menu-bar .mb-item:hover { background: #000; color: #fff; }
 .menu-bar .spacer { flex: 1; }
+/* The Application menu's icon. System 7 showed the frontmost application's icon here and
+   the name beside it, which is how you knew what the menus to the left belonged to. */
+.menu-bar .app-menu .mb-item { display: inline-flex; align-items: center; gap: 5px; }
+.menu-bar .app-menu .app-icon {
+  width: 12px; height: 12px; flex: 0 0 auto; background: currentColor;
+  -webkit-mask: var(--i-app) center / 12px 12px no-repeat;
+          mask: var(--i-app) center / 12px 12px no-repeat;
+  --i-app: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M1 1h10v1H1zM1 10h10v1H1zM1 1h1v10H1zM10 1h1v10h-1zM3 3h6v1H3zM3 5h6v1H3zM3 7h4v1H3z'/%3E%3C/svg%3E");
+}
+
+/* ---------- title bar close box ----------
+   system.css styles this as `.title-bar button`, an element selector. These are decorative
+   — nothing ever handled a click — so the markup is a <span>, which means none of that
+   styling applies and the box vanished from every window. Drawn here instead: same
+   proportions, no focus stop, no false affordance. */
+.title-bar .close, .title-bar .zoom {
+  display: block; flex: 0 0 auto;
+  width: 13px; height: 13px; margin: 0 .25rem;
+  border: 1px solid var(--mac-line);
+  background: #fff;
+}
+/* The zoom box goes last in source order, so it needs no auto margin to sit on the right —
+   and must not have one: the title centres itself with `margin: 0 auto`, and a second auto
+   margin in the same flex row competes for that free space and pulls the title off centre. */
+.title-bar .zoom { position: relative; }
+.title-bar .zoom::after {
+  content: ""; position: absolute; left: 1px; top: 1px; width: 6px; height: 6px;
+  border: 1px solid var(--mac-line);
+}
 
 /* ---------- centered app window ---------- */
 .app { width: 100%; display: flex; justify-content: center; padding: 30px 18px 58px; }
@@ -105,42 +310,86 @@ body.desktop {
 .muted { color: #555; }
 .divider { border: none; border-top: 1px solid #000; opacity: .25; margin: 16px 0; }
 
-/* ---------- buttons ----------
-   system.css draws these with a soft border-image, which reads as a faint outline rather
-   than something you press. This is the raised-button look the era actually used and the
-   one .file-picker-button already had: hard black edge, offset shadow, and the whole thing
-   drops into the shadow when pressed. */
+/* ---------- push buttons (Human Interface Guidelines) ----------
+   Drawn to the real specification, with one deliberate departure.
+
+   The spec, from the 1992 HIG: a roundRect with oval width/height 16, i.e. an 8px corner
+   radius; a one-pixel frame; 20px tall; at least 59px wide; Chicago label centred. The
+   default button is framed by a 3px-thick rounded rectangle drawn 4px outside it.
+   Pressing inverts the whole button. Disabled items are dimmed by screening them through
+   a 50% grey pattern — not by painting them a lighter grey.
+
+   The departure: those pixel sizes were drawn for a 9-inch 512x342 screen at 72dpi, where
+   one pixel was one point. Reproduced literally on a modern display a button is 20 real
+   pixels tall, too small to hit and well under any touch target. So the geometry is kept
+   in exact proportion and scaled by 1.4: radius 8->11, height 20->28, min width 59->83.
+   Ring thickness and offset stay at 3px and 4px, which read correctly at either scale. */
 body.desktop .btn,
 body.desktop a.btn,
-body.desktop button.btn {
-  min-height: 44px;
+body.desktop button.btn,
+body.desktop .file-picker-button {
   display: inline-flex; align-items: center; justify-content: center;
-  border: 2px solid var(--mac-line);
-  border-image: none;
-  border-radius: 0;
+  font-family: var(--font-ui);
+  font-size: var(--ui-md);
+  font-weight: 400;
+  line-height: 1;
+  color: var(--mac-line);
   background: #fff;
-  color: #000;
-  box-shadow: 2px 2px 0 var(--mac-line);
-  padding: 8px 16px;
-  font-size: var(--ui-sm);
-  font-weight: bold;
-  text-decoration: none;
-}
-body.desktop .btn:active:not([aria-disabled="true"]) {
-  transform: translate(2px, 2px);
+  border: 1px solid var(--mac-line);
+  border-image: none;
+  border-radius: 11px;
   box-shadow: none;
-  background: #fff;                /* system.css inverts to black; the push reads better */
-  color: #000;
+  padding: 6px 14px;
+  min-height: 28px;
+  min-width: 83px;
+  text-decoration: none;
+  cursor: pointer;
 }
-/* the default action gets a second ring, the way a highlighted button did */
-body.desktop .btn.default { box-shadow: 2px 2px 0 var(--mac-line), 0 0 0 2px var(--mac-line); }
-body.desktop .btn.default:active { box-shadow: 0 0 0 2px var(--mac-line); }
-body.desktop .btn.sel { box-shadow: 2px 2px 0 var(--mac-line), inset 0 0 0 2px var(--mac-line); }
-body.desktop .btn[aria-disabled="true"] { cursor: default; }
+/* the default button's ring: 3px thick, 4px clear of the frame */
+body.desktop .btn.default {
+  box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--mac-line);
+  margin: 7px;
+}
+/* System 7 had no hover state — there was no pointer tracking to build one from. A web
+   button that stays inert until clicked reads as broken, so this is the one addition,
+   kept to the lightest thing that still answers the pointer. */
+body.desktop .btn:hover:not([aria-disabled="true"]):not(:disabled),
+body.desktop .file-picker-button:hover { background: #eaeaea; }
+/* pressed inverts the whole button, which is the era's only press feedback */
+body.desktop .btn:active:not([aria-disabled="true"]):not(:disabled),
+body.desktop .file-picker-button:active {
+  background: var(--mac-line);
+  color: #fff;
+}
+body.desktop .btn:focus-visible,
+body.desktop .file-picker-input:focus-visible + .file-picker-button {
+  outline: 2px solid var(--mac-line);
+  outline-offset: 3px;
+}
+/* Dimmed, not greyed: the button is screened through a 50% checkerboard, which is how
+   System 7 disabled anything. Every other pixel is simply not drawn. */
+body.desktop .btn[aria-disabled="true"],
+body.desktop .btn:disabled,
+body.desktop .btn.is-busy {
+  color: var(--mac-line);
+  border-color: var(--mac-line);
+  background: #fff;
+  cursor: default;
+  -webkit-mask-image: repeating-conic-gradient(#000 0% 25%, transparent 0% 50%);
+  mask-image: repeating-conic-gradient(#000 0% 25%, transparent 0% 50%);
+  -webkit-mask-size: 2px 2px;
+  mask-size: 2px 2px;
+}
+body.desktop .btn.sel { box-shadow: inset 0 0 0 2px var(--mac-line); }
 .btn.block { width: 100%; }
-@media (prefers-reduced-motion: reduce) {
-  body.desktop .btn:active:not([aria-disabled="true"]) { transform: none; }
-}
+
+/* Segmented controls are the same button, just tighter. */
+/* The 59px minimum in the HIG is for a dialog push button. A segmented control cell and
+   a one-character scroll arrow are not that, and holding them to it makes a row of arrows
+   as wide as a paragraph. Same shape, released from the width floor. */
+body.desktop .seg .btn,
+/* square, so the arrow sits in a box rather than a lozenge */
+body.desktop .seg .btn.sel { box-shadow: inset 0 0 0 2px var(--mac-line); }
 
 /* form helpers */
 .field-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
@@ -149,8 +398,41 @@ body.desktop .btn[aria-disabled="true"] { cursor: default; }
 .field-col label { font-weight: bold; }
 input.w100, textarea.w100, select.w100 { width: 100%; box-sizing: border-box; }
 textarea.w100 { min-height: 90px; resize: vertical; }
-.error-box { border: 2px solid #000; padding: 8px 10px; margin-bottom: 14px; background: #fff; }
+/* An alert: icon top-left, message beside it, actions bottom-right with the default
+   ringed. Replaces a plain bordered div, which said "something is written here" rather
+   than "something went wrong". */
+.error-box, .alert7 {
+  border: 1px solid var(--mac-line); box-shadow: 2px 2px 0 var(--mac-line);
+  padding: 14px 16px; margin-bottom: 16px; background: #fff;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.error-box::before, .alert7::before {
+  content: "!"; flex: 0 0 auto;
+  width: 32px; height: 32px; border: 2px solid var(--mac-line); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-chrome); font-size: var(--ui-lg); line-height: 1;
+}
+.alert7 .msg { flex: 1; min-width: 0; }
+.alert7 .acts { display: flex; gap: 12px; justify-content: flex-end; margin-top: 14px; }
 .check-row { display: flex; align-items: center; gap: 8px; text-align: left; }
+/* Square with a check, circle with a solid centre, both 13px — as drawn in System 7. */
+body.desktop input[type="checkbox"],
+body.desktop input[type="radio"] {
+  appearance: none; -webkit-appearance: none;
+  width: 13px; height: 13px; flex: 0 0 auto; margin: 0 4px 0 0;
+  border: 1px solid var(--mac-line); background: #fff; position: relative; cursor: pointer;
+}
+body.desktop input[type="radio"] { border-radius: 50%; }
+body.desktop input[type="checkbox"]:checked::after {
+  content: ""; position: absolute; left: 1px; top: 4px; width: 8px; height: 4px;
+  border-left: 2px solid var(--mac-line); border-bottom: 2px solid var(--mac-line);
+  transform: rotate(-45deg);
+}
+body.desktop input[type="radio"]:checked::after {
+  content: ""; position: absolute; inset: 2px; background: var(--mac-line); border-radius: 50%;
+}
+body.desktop input[type="checkbox"]:focus-visible,
+body.desktop input[type="radio"]:focus-visible { outline: 2px solid var(--mac-line); outline-offset: 2px; }
 
 /* classic Macintosh range slider */
 body.desktop input[type="range"] {
@@ -235,8 +517,6 @@ body.desktop input[type="range"]:disabled {
   color: #000; cursor: pointer; font-weight: bold; white-space: nowrap;
   box-shadow: 2px 2px 0 #000;
 }
-.file-picker-button:active { transform: translate(2px, 2px); box-shadow: none; }
-.file-picker-input:focus + .file-picker-button { outline: 2px solid #000; outline-offset: 2px; }
 .file-picker-icon {
   position: relative; width: 18px; height: 22px; flex: 0 0 18px;
   border: 2px solid #000; background: #fff;
@@ -292,8 +572,6 @@ body.desktop input[type="range"]:disabled {
 .profile-actions .btn { margin: 0; }
 .profile-actions form { display: inline-flex; margin: 0; }
 
-/* ---------- view switch (Coverflow / Directory) ---------- */
-.view-switch { display: flex; gap: 8px; justify-content: center; margin: 4px 0 14px; }
 #gallery { position: relative; }
 #gallery > .soul-card[data-card] { display: none; }
 #cover-arrows {
@@ -301,7 +579,6 @@ body.desktop input[type="range"]:disabled {
 }
 
 /* ---------- card = mini Mac window ---------- */
-.soul-card { width: 270px; }
 .home-window .soul-card {
   width: 400px;
   height: 400px;
@@ -324,11 +601,12 @@ body.desktop input[type="range"]:disabled {
   transform: translate(-50%, -50%);
 }
 .soul-card .title-bar .title { font-size: var(--ui-sm); }
-.soul-card .window-pane { display: flex; flex-direction: column; min-height: 190px; padding: 16px 20px 18px; }
 .home-window .soul-card .window-pane {
+  display: flex; flex-direction: column;
   min-height: 0;
   height: calc(400px - 29px);
-  padding: 22px 26px 22px;
+  padding: 20px 22px 18px;
+  overflow: hidden;   /* the card never scrolls, so it must not reserve a scrollbar gutter */
 }
 .soul-quote {
   flex: 1; display: flex; align-items: center; justify-content: center;
@@ -341,25 +619,47 @@ body.desktop input[type="range"]:disabled {
 body.desktop .font-preview.has-korean { line-height: 1.56; }
 .soul-card .card-foot {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  border-top: 1px solid #000; padding-top: 12px; margin-top: 10px;
+  border-top: 1px solid #000; padding-top: 9px; margin-top: 8px;
 }
-.soul-card .card-foot .fname { font-size: var(--ui-xs); font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A card button is not a dialog button. The 83x28 floor made "Get" a quarter of the footer
+   row and set it larger than the username beside it; this is the compact geometry the
+   segmented controls already use. */
+.soul-card .card-foot .btn,
+.directory-actions .btn {
+  min-width: 46px; min-height: 26px; padding: 4px 12px; font-size: var(--ui-sm);
+}
 
 /* ---------- COVERFLOW ---------- */
+/* The band has to clear the centre card as it is *rendered*, not as it is authored: the card
+   is 400px, scaled 1.08, and pushed 150px toward the viewer, which against a 1400px perspective
+   magnifies it a further 1400/(1400-150) = 1.12. So 400 x 1.08 x 1.12 = 484px, plus clearance.
+   It used to be 560px. */
 .coverflow {
-  position: relative; height: 560px; perspective: 1400px;
+  position: relative; height: 508px; perspective: 1400px;
   display: flex; align-items: center; justify-content: center; margin: 0 auto;
   overflow: hidden;   /* clip the 3D cards so they never trigger page scroll */
+  /* overflow alone does not clip descendants inside a preserve-3d context, so the far
+     cards were escaping the window and floating over the desktop. clip-path does. */
+  clip-path: inset(0);
   max-width: 100%;
 }
 .coverflow .soul-card {
   position: absolute; top: 50%; left: 50%;
+  /* system.css gives every .window a 1rem margin, and a card is a .window. On an absolutely
+     positioned box that margin is not collapsed away — it offsets the card 16px down and 16px
+     right of the centre it was placed at, which pushed its bottom edge through the clip. */
+  margin: 0;
   transition: transform .45s cubic-bezier(.25,.8,.25,1), opacity .45s ease;
   transform-style: preserve-3d; will-change: transform;
 }
-.cover-arrow {
+/* Specificity matters here: `body.desktop .btn` sets the 83px dialog-button minimum, so a
+   bare `.cover-arrow` never won and the arrow rendered as a lozenge. */
+body.desktop .btn.cover-arrow {
   position: absolute; top: 50%; transform: translateY(-50%);
-  z-index: 80; min-width: 34px; pointer-events: auto;
+  z-index: 80;             /* the coverflow cards climb to 100; the arrows sit above them */
+  pointer-events: auto;    /* the arrow strip itself is click-through */
+  width: 28px; height: 28px; min-width: 28px; min-height: 28px;
+  padding: 0; border-radius: 6px;
 }
 .cover-arrow.left { left: 0; }
 .cover-arrow.right { right: 0; }
@@ -373,7 +673,10 @@ body.desktop .font-preview.has-korean { line-height: 1.56; }
   border: 1px solid #000; background: #fff; padding: 18px 20px 16px;
 }
 .directory-user { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.home-window .directory-user .profile-copy {
+/* The list view still shows two lines, so its copy block is held to the avatar's height. The
+   card no longer does — since the title bar already names the font, the footer dropped to one
+   line — so a fixed box there would pin that line to the top while the avatar centred. */
+.home-window .directory-user:not(.compact) .profile-copy {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -381,9 +684,9 @@ body.desktop .font-preview.has-korean { line-height: 1.56; }
 }
 .directory-user.compact { gap: 10px; }
 .directory-user.compact .profile-avatar.small {
-  width: 36px; height: 36px; flex-basis: 36px; font-size: var(--ui-md);
+  width: 30px; height: 30px; flex-basis: 30px; font-size: var(--ui-sm);
 }
-.directory-user.compact .profile-copy { height: 36px; }
+
 .directory-user.compact .profile-copy .profile-name { font-size: var(--ui-sm); }
 .directory-user.compact .profile-copy .muted { font-size: var(--ui-xs); }
 .directory-quote {
@@ -402,7 +705,7 @@ body.desktop .directory-quote.font-preview.has-korean { line-height: 1.52; }
 }
 
 .empty-note { text-align: center; padding: 30px 10px; }
-.site-foot { text-align: center; padding: 16px; font-size: var(--ui-sm); }
+
 
 @media (max-width: 560px) {
   .menu-bar { gap: 8px; font-size: var(--ui-sm); }
@@ -419,7 +722,7 @@ body.desktop .directory-quote.font-preview.has-korean { line-height: 1.52; }
   .home-window .soul-card { width: 270px; height: 270px; }
   .home-window .soul-card .window-pane { height: calc(270px - 29px); min-height: 0; padding: 16px 20px 18px; }
   .home-window .soul-quote { min-height: 100px; }
-  .coverflow { height: 410px; }
+  .coverflow { height: 340px; }
   .field-row { flex-direction: column; align-items: stretch; }
   .field-row label { min-width: 0; }
   input.w100, textarea.w100, select.w100 { min-width: 0; }
@@ -450,6 +753,7 @@ body.desktop .directory-quote.font-preview.has-korean { line-height: 1.52; }
   .meta-row > span:last-child { text-align: left; }
   .tryout .tryout-row { flex-direction: column; align-items: stretch; }
   .tryout .tryout-row .btn { width: 100%; text-align: center; }
+  .seg .btn { min-height: 44px; }   /* touch target back on small screens */
 
   /* Menu-bar links are a 22px strip on desktop — correct for the era, but half the
      44px minimum touch target. Give them a real target on touch screens only. */
@@ -465,13 +769,633 @@ body.desktop .directory-quote.font-preview.has-korean { line-height: 1.52; }
 .gen-box .hint { margin: 10px 0 0; color: #555; }
 /* 1-bit bar: black fill in a black box. No gradient, no rounding — same idiom as the
    window chrome around it. */
-.gen-bar { border: 2px solid var(--mac-line); background: #fff; height: 16px; padding: 2px; }
+/* System 7 drew progress as a thermometer with a striped fill, never a solid block. */
+.gen-bar { border: 1px solid var(--mac-line); background: #fff; height: 14px; padding: 1px; }
 .gen-bar-fill {
-  height: 100%; background: #000; width: 0;
+  height: 100%; width: 0;
+  background: repeating-linear-gradient(90deg, var(--mac-line) 0 2px, #fff 2px 4px);
   transition: width .4s linear;
 }
 .gen-failed { border-style: solid; }
 .gen-failed h3 { margin-bottom: 8px; }
 @media (prefers-reduced-motion: reduce) {
   .gen-bar-fill { transition: none; }
+}
+
+
+/* ============================================================
+   Page-specific rules, moved out of the templates. They lived in
+   per-page <style> blocks, which is how the app ended up with 20
+   different font sizes and no way to see them together.
+   ============================================================ */
+
+/* ---------- About page ---------- */
+/* keep h2 section titles in the classic heading font; everything else uses the
+   same Inconsolata body stack (from .window-pane) at one consistent size. */
+.steps,
+.tech,
+p.muted { font-family: inherit; font-size: var(--ui-sm); line-height: 1.6; }
+/* Markers sit inside so each item starts flush with the paragraphs around it. With
+   the default outside marker the list was indented 20px and nothing lined up. */
+.steps { margin: 6px 0 0; padding-left: 0; list-style-position: inside; }
+.steps li { margin: 4px 0; }
+
+/* ---------- Signup / login forms ---------- */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+@media (max-width: 520px) { .two { grid-template-columns: 1fr; } }
+.err { color: #000; font-weight: bold; font-size: var(--ui-xs); }
+
+/* ---------- Create page: steps, speed and compute pickers, tips ---------- */
+/* Down the page, in the order you do them. This was a 1fr 1fr grid, which reads as a choice
+   between two things rather than a first-then-second. */
+.steps {
+  display: flex; flex-direction: column; gap: 12px;
+  margin: 14px 0 0; padding: 0; list-style: none; counter-reset: step;
+}
+.step-box { border: 1px solid #000; padding: 14px 16px 16px; }
+.step-box h3 {
+  display: flex; align-items: center; gap: 9px;
+  margin: 0 0 8px; line-height: 1.2;
+}
+.step-box p { margin: 0 0 11px; font-size: var(--ui-sm); }
+.step-box .step-n {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; flex: 0 0 20px;
+  border: 1px solid var(--mac-line); font-size: var(--ui-sm);
+}
+/* a step with nothing left to do inverts its number, the way a checked item read */
+.step-box.done .step-n { background: var(--mac-line); color: #fff; }
+.step-box .field-col:last-child { margin-bottom: 0; }
+.step-box .tip { margin-top: 12px; }
+.speed { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 2px; }
+@media (max-width: 720px) { .speed { grid-template-columns: 1fr; } }
+.speed label { border: 1px solid #000; padding: 10px 12px; cursor: pointer; display: block; }
+.speed label.sel { box-shadow: 0 0 0 2px #000 inset; }
+.speed .name { font-weight: bold; }
+.speed .desc { font-size: var(--ui-xs); }
+.tip { border: 1px solid #000; background: #f3f3f3; padding: 10px 12px 10px; font-size: var(--ui-sm); line-height: 1.6; margin-top: 10px; }
+.tip .tip-title { font-weight: bold; cursor: pointer; list-style: none; }
+.tip .tip-title::-webkit-details-marker { display: none; }
+.tip .tip-title::before { content: "▸ "; }
+.tip[open] .tip-title::before { content: "▾ "; }
+.tip ul { margin: 6px 0 0; padding-left: 18px; }
+.tip li { margin: 2px 0; }
+.tip b { white-space: nowrap; }
+
+/* ---------- Letter page: paper designs and the document ---------- */
+/* ---------- design / template + ratio pickers ---------- */
+.designs { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; }
+.design-btn {
+  width: 56px; height: 40px; border: 2px solid #000; cursor: pointer; padding: 0;
+  background-size: cover; background-position: center;
+}
+.design-btn.sel { box-shadow: 0 0 0 2px #000, 3px 3px 0 #000; }
+/* swatch previews — the #paper.design-* rules are id-scoped, so the buttons need
+   their own mini backgrounds or they'd render as empty boxes. */
+.design-btn.design-plain { background: #fff; }
+.design-btn.design-lined {
+  background-color: #fff;
+  background-image: linear-gradient(#cfe0f0 1px, transparent 1px);
+  background-size: 100% 9px; background-position: 0 6px;
+}
+.design-btn.design-grid {
+  background-color: #fff;
+  background-image:
+    linear-gradient(#d2d2d2 1px, transparent 1px),
+    linear-gradient(90deg, #d2d2d2 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+.design-btn.design-vintage { background: #f6efde; border-color: #b89a5e; box-shadow: 0 0 0 2px #f6efde inset, 0 0 0 3px #b89a5e inset; }
+.design-btn.design-vintage.sel { box-shadow: 0 0 0 2px #000, 3px 3px 0 #000; }
+.design-btn.design-note { background: #fff7b0; }
+.design-btn.design-blush {
+  background-color: #fdeef0;
+  background-image: radial-gradient(#f6cdd5 1px, transparent 1.5px);
+  background-size: 7px 7px;
+}
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+/* Segmented controls sit inside a dense toolbar, so they stay compact rather than taking
+   the 44px touch target the standalone buttons get; the mobile breakpoint restores it. */
+.seg .btn { min-width: 46px; min-height: 26px; padding: 4px 12px; }
+.seg .btn.sel { font-weight: bold; box-shadow: 0 0 0 2px #000 inset; }
+/* ---------- classic document window (SimpleText-style) ---------- */
+/* The pop-up menu is a control like any other, so it takes the same edge, the same type
+   and the same raised shadow as a push button. system.css sizes it at 18px in a fixed
+   10rem box, which is off the scale and wider than anything it ever holds. */
+body.desktop select {
+  font-family: var(--font-ui);
+  font-size: var(--ui-sm);
+  color: var(--mac-line);
+  background-color: #fff;
+  border: 1px solid var(--mac-line);
+  border-radius: 0;
+  box-shadow: 1px 1px 0 var(--mac-line);
+  width: auto;
+  min-height: 22px;
+  padding: 2px 22px 2px 8px;      /* room on the right for the pixel arrow */
+  background-position: center right 3px;
+}
+body.desktop select:focus-visible { outline: 2px solid var(--mac-line); outline-offset: 2px; }
+/* the window is the document window, so the desk fills what is left of it */
+.doc-app > .doc-scroll { border-top: none; }
+
+/* ---------- the ribbon ----------
+   Word 5.0's ribbon, which is what a Mac application's toolbar actually looked like: pop-up
+   menus for font and size on the left, then square icon buttons in clusters divided by
+   hairlines. Not lozenges — a push button is for committing to something, and setting bold
+   is not that. These are 1-bit toggles and they invert when they are on, the way the era
+   showed state. */
+.ribbon {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 3px;
+  padding: 4px 8px; background: #dcdcdc;
+  border-bottom: 1px solid var(--mac-line);
+}
+.ribbon .rb-sep {
+  width: 1px; align-self: stretch; margin: 2px 5px; background: var(--mac-line); flex: 0 0 auto;
+}
+.ribbon .rb-spacer { flex: 1 1 auto; }
+.ribbon label { font-size: var(--ui-xs); margin-right: 2px; }
+body.desktop .ribbon .popup .popup-face { min-height: 22px; }
+.ribbon .popup.rb-font  { width: 190px; }
+.ribbon .popup.rb-size  { width: 74px; }
+.ribbon .popup.rb-weight { width: 104px; }
+.ribbon .popup.rb-paper { width: 116px; }
+
+/* The icon button. Square, hairline edge, no radius and no raised shadow — those belong to
+   push buttons. Specificity has to clear `body.desktop button.btn` (0,2,2), so the selector
+   carries the ribbon and the element both. */
+body.desktop .ribbon button.ico {
+  width: 25px; height: 25px; min-width: 0; min-height: 0;
+  flex: 0 0 auto; padding: 0; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--mac-line); border-radius: 0;
+  background: #fff; color: var(--mac-line); box-shadow: none;
+  font: bold var(--ui-sm)/1 var(--font-ui);
+  cursor: pointer;
+}
+body.desktop .ribbon button.ico:active,
+body.desktop .ribbon button.ico.sel { background: var(--mac-line); color: #fff; }
+body.desktop .ribbon button.ico:focus-visible { outline: 2px solid var(--mac-line); outline-offset: 2px; }
+/* the glyph is a mask, so it takes its colour from the button and inverts with it */
+.ribbon button.ico > i {
+  display: block; width: 16px; height: 16px; background: currentColor;
+  -webkit-mask: var(--i) center / 16px 16px no-repeat;
+          mask: var(--i) center / 16px 16px no-repeat;
+}
+/* The glyphs. Drawn on a 16x16 grid out of whole-pixel rectangles, so they stay hard-edged
+   at any zoom — the same constraint the original icons were drawn under. */
+.ribbon .i-left  { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 3h12v2H2zM2 6h8v2H2zM2 9h12v2H2zM2 12h8v2H2z'/%3E%3C/svg%3E"); }
+.ribbon .i-center{ --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 3h12v2H2zM4 6h8v2H4zM2 9h12v2H2zM4 12h8v2H4z'/%3E%3C/svg%3E"); }
+.ribbon .i-right { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 3h12v2H2zM6 6h8v2H6zM2 9h12v2H2zM6 12h8v2H6z'/%3E%3C/svg%3E"); }
+.ribbon .i-just  { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 3h12v2H2zM2 6h12v2H2zM2 9h12v2H2zM2 12h12v2H2z'/%3E%3C/svg%3E"); }
+.ribbon .i-bullet{ --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 3h2v2H2zM6 3h8v2H6zM2 7h2v2H2zM6 7h8v2H6zM2 11h2v2H2zM6 11h8v2H6z'/%3E%3C/svg%3E"); }
+.ribbon .i-number{ --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 2h1v3H2zM1 3h1v1H1zM1 5h3v1H1zM6 3h8v2H6zM1 7h3v1H1zM3 8h1v1H3zM1 9h3v1H1zM1 10h1v1H1zM1 10h3v1H1zM6 7h8v2H6zM6 11h8v2H6z'/%3E%3C/svg%3E"); }
+.ribbon .i-trash { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6 1h4v1H6zM3 2h10v2H3zM4 5h1v9H4zM11 5h1v9h-1zM4 13h8v1H4zM6 6h1v6H6zM9 6h1v6H9z'/%3E%3C/svg%3E"); }
+.ribbon .i-disk  { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 2h12v1H2zM2 13h12v1H2zM2 2h1v12H2zM13 2h1v12h-1zM5 3h6v4H5zM4 9h8v4H4z'/%3E%3C/svg%3E"); }
+
+/* letterform buttons, exactly as Word drew them */
+.ribbon .ico-b { font-weight: 900; }
+.ribbon .ico-i { font-style: italic; }
+.ribbon .ico-u { text-decoration: underline; }
+.ribbon .ico-o { -webkit-text-stroke: 1px currentColor; color: transparent; }
+body.desktop .ribbon button.ico.ico-o { color: transparent; -webkit-text-stroke: 1px var(--mac-line); }
+body.desktop .ribbon button.ico.ico-o.sel,
+body.desktop .ribbon button.ico.ico-o:active { -webkit-text-stroke: 1px #fff; background: var(--mac-line); }
+.ribbon .ico-s { text-shadow: 2px 2px 0 #9b9b9b; }
+
+.ribbon .designs { display: flex; gap: 3px; margin: 0; }
+.ribbon .design-btn { width: 25px; height: 25px; border-radius: 0; }
+/* the swatch shows selection with an inset ring: the outer ring the gallery swatches use
+   is drawn outside the box, which made the whole ribbon row taller than its neighbour. */
+.ribbon .design-btn.sel,
+.ribbon .design-btn.design-vintage.sel { box-shadow: 0 0 0 2px var(--mac-line) inset; }
+
+/* ---------- pop-up menus ----------
+   A native <select> opens the host system's own menu. On this machine that is a dark, rounded,
+   blue-highlighted panel in the system font, which has nothing to do with anything else on the
+   page and breaks the illusion the moment you click it. The control is drawn here instead; the
+   real <select> stays in the DOM, hidden, so forms still submit and scripts still read .value. */
+.popup { position: relative; display: inline-flex; flex: 0 0 auto; vertical-align: middle; }
+.popup > select {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; pointer-events: none;
+}
+body.desktop .popup .popup-face {
+  display: flex; align-items: center; width: 100%;
+  min-height: 22px; padding: 2px 20px 2px 8px;
+  font-family: var(--font-ui); font-size: var(--ui-xs); color: var(--mac-line);
+  background: #fff; border: 1px solid var(--mac-line); border-radius: 0;
+  box-shadow: 1px 1px 0 var(--mac-line);
+  text-align: left; cursor: pointer; position: relative;
+}
+body.desktop .popup .popup-face:focus-visible { outline: 2px solid var(--mac-line); outline-offset: 2px; }
+.popup .popup-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the solid triangle a pop-up wore on its right edge */
+.popup .popup-face::after {
+  content: ""; position: absolute; right: 5px; top: 50%; margin-top: -2px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 5px solid var(--mac-line);
+}
+.popup .popup-list {
+  display: none; position: absolute; top: 100%; left: 0; z-index: 60;
+  min-width: 100%; max-height: 320px; overflow: auto;
+  margin: 0; padding: 0; list-style: none;
+  background: #fff; border: 1px solid var(--mac-line);
+  box-shadow: 2px 2px 0 var(--mac-line);
+}
+.popup[open] .popup-list { display: block; }
+.popup .popup-list li {
+  position: relative; padding: 3px 16px 3px 22px; white-space: nowrap; cursor: pointer;
+  font: var(--ui-xs)/1.6 var(--font-ui); color: var(--mac-line);
+}
+.popup .popup-list li:hover { background: var(--mac-line); color: #fff; }
+.popup .popup-list li[aria-selected="true"]::before {
+  content: "\2713"; position: absolute; left: 6px;
+}
+
+/* ---------- the ruler ----------
+   Marked in real inches: CSS defines 1in as 96px, so the numbers describe the page rather
+   than decorating it. The two markers set the text margins and can be dragged. */
+.doc-ruler {
+  background: #dcdcdc; border-bottom: 2px solid var(--mac-line);
+  padding: 0; display: flex; justify-content: flex-start; overflow: hidden;
+}
+.doc-ruler .rl-track {
+  position: relative; height: 21px; background: #fff;
+  border: 1px solid var(--mac-line); border-bottom: none;
+}
+.doc-ruler .rl-tick { position: absolute; bottom: 0; width: 1px; background: var(--mac-line); }
+.doc-ruler .rl-tick.maj { height: 7px; }
+.doc-ruler .rl-tick.min { height: 4px; }
+.doc-ruler .rl-num {
+  position: absolute; top: 2px; transform: translateX(-50%);
+  font: var(--ui-xs)/1 var(--font-ui); color: var(--mac-line);
+}
+/* the indent markers: a solid triangle, which is how the ruler drew them */
+.doc-ruler .rl-mark {
+  position: absolute; top: 3px; width: 0; height: 0; margin-left: -5px;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 8px solid var(--mac-line);
+  cursor: ew-resize; touch-action: none;
+}
+.doc-ruler .rl-mark:focus-visible { outline: 2px solid var(--mac-line); outline-offset: 3px; }
+
+/* ---------- the status bar ----------
+   The strip along the bottom of a document window: what is in the document, stated plainly. */
+.doc-status {
+  display: flex; align-items: center; gap: 14px;
+  padding: 3px 10px; background: #dcdcdc;
+  border-top: 2px solid var(--mac-line);
+  font-size: var(--ui-xs); line-height: 16px;
+}
+.doc-status .tb-spacer { flex: 1; }
+.doc-status .st-cell { border-right: 1px solid #9b9b9b; padding-right: 14px; }
+
+/* gray "desk" behind the page; the window scrolls, the page grows */
+.doc-scroll {
+  background: #8f8f8f;
+  background-image: repeating-conic-gradient(#828282 0% 25%, #9c9c9c 0% 50%);
+  background-size: 4px 4px;
+  padding: 26px 22px; height: 74vh; min-height: 420px; overflow: auto;
+  display: flex; justify-content: center; align-items: flex-start;
+}
+/* ---------- the editable letter (PNG export target) ---------- */
+#paper {
+  width: 520px; max-width: 100%; padding: 48px 44px;
+  box-sizing: border-box; color: #111;
+  display: flex; flex-direction: column; gap: 22px;
+  overflow: hidden;  /* strictly clip anything that runs past the page bounds */
+  box-shadow: 0 2px 0 rgba(0,0,0,.35), 0 6px 14px rgba(0,0,0,.35);
+}
+#paper .letter-body {
+  flex: 1 1 auto; min-height: 0; outline: none; font-size: var(--spec-sm); line-height: 1.55;
+  word-break: break-word; overflow: hidden; white-space: pre-wrap;
+}
+#paper .letter-body:empty::before { content: attr(data-placeholder); color: #999; }
+#paper .letter-sign {
+  flex: 0 0 auto; outline: none; font-size: var(--spec-sm); text-align: right; line-height: 1.4;
+  min-height: 1em; overflow: hidden; word-break: break-word; white-space: pre-wrap;
+}
+#paper .letter-sign:empty::before { content: attr(data-placeholder); color: #999; }
+/* paper ratios (id-qualified so they win over the base #paper rule) */
+#paper.ratio-a4p      { width: 520px; aspect-ratio: 210 / 297; }
+#paper.ratio-a4l      { width: 700px; aspect-ratio: 297 / 210; }
+#paper.ratio-square   { width: 540px; aspect-ratio: 1 / 1; }
+#paper.ratio-letter   { width: 520px; aspect-ratio: 8.5 / 11; }
+#paper.ratio-postcard { width: 620px; aspect-ratio: 148 / 100; }
+/* paper designs (id-qualified -> beat the base #paper background/color) */
+#paper.design-plain { background: #fff; }
+#paper.design-lined {
+  background-color: #fff;
+  background-image: linear-gradient(#cfe0f0 1px, transparent 1px);
+  background-size: 100% 44px; background-position: 0 46px;
+}
+#paper.design-grid {
+  background-color: #fff;
+  background-image:
+    linear-gradient(#e6e6e6 1px, transparent 1px),
+    linear-gradient(90deg, #e6e6e6 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+#paper.design-vintage { background: #f6efde; color: #3a2f1b; border: 8px double #b89a5e; }
+#paper.design-note    { background: #fff7b0; color: #2a2a14; }
+#paper.design-blush {
+  background: #fdeef0; color: #5a2a35;
+  background-image: radial-gradient(#f6cdd5 1.4px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+@media (max-width: 560px) {
+  #paper { padding: 30px 22px; }
+  #paper .letter-body { font-size: var(--spec-sm); }
+  .doc-scroll { padding: 12px; }
+}
+
+/* ---------- My Page: specimen, font details, action rows ---------- */
+{# Only once generation is done — before that ttf_file is still the bundled MaruBuri. #}
+/* font details — mirrors the .tryout box so the two read as sibling panels */
+.meta { border: 1px solid #000; padding: 14px 16px 16px; margin: 18px 0; }
+.meta .meta-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.meta .meta-head h3 { margin: 0; font-size: var(--ui-md); }
+.meta-form { margin-top: 12px; }
+.meta-form .field-col { margin-bottom: 8px; }
+.meta-form .right-row { margin-top: 4px; }
+.meta .hint { margin: 4px 0 10px; font-size: var(--ui-xs); color: #555; }
+.meta-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #ccc; font-size: var(--ui-sm); }
+.meta-row:last-child { border-bottom: 0; }
+.meta-row .k { font-weight: bold; flex: 0 0 auto; }
+.meta-row > span:last-child { text-align: right; word-break: break-word; }
+/* one prominent action, then a quiet row of everything else */
+.primary-row { display: flex; margin: 14px 0 4px; }
+.primary-row .btn { width: 100%; }
+.secondary-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; }
+.secondary-row form { margin: 0; display: inline-flex; }
+.secondary-row .btn.sel { font-weight: bold; box-shadow: 0 0 0 2px #000 inset; }
+/* ---------- list view ----------
+   Finder's list: header row, disclosure triangle, selected row inverted whole. */
+.listview { border: 1px solid var(--mac-line); margin: 14px 0 0; font-family: var(--font-chrome); }
+/* directly under the window's header line, so it has no margin and no side borders of its own */
+.app-window > .listview { margin: 0; border-width: 0 0 2px; max-height: 168px; overflow-y: auto; }
+.lv-head {
+  display: flex; border-bottom: 1px solid var(--mac-line); background: #e0e0e0;
+  font-size: var(--ui-sm);
+}
+.lv-head span { padding: 2px 8px; border-right: 1px solid var(--mac-line); flex: 1; min-width: 0; }
+/* .lv-row leads with a 19px triangle that the header had no cell for, so every label sat one
+   column left of the data it named. This is that cell. */
+.lv-head .lv-pad { flex: 0 0 19px; padding: 0; border-right: none; }
+/* Named rather than counted. These were nth-child, so adding the triangle's spacer cell
+   shifted every width onto the wrong column. */
+.lv-head .lv-c-name { flex: 1; }
+.lv-head .lv-c-w { flex: 0 0 76px; }
+.lv-head .lv-c-h { flex: 0 0 60px; border-right: none; text-align: center; }
+.lv-row {
+  display: flex; align-items: center; text-decoration: none; color: var(--mac-line);
+  border-bottom: 1px solid #d4d4d4; font-size: var(--ui-sm); min-height: 26px;
+}
+.lv-row:last-child { border-bottom: none; }
+.lv-row:hover { background: #ededed; }
+.lv-row.sel, .lv-row.sel:hover { background: var(--mac-line); color: #fff; }
+.lv-row:focus-visible { outline: 2px solid var(--mac-line); outline-offset: -2px; }
+.lv-name { flex: 1; min-width: 0; padding: 3px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lv-w { flex: 0 0 76px; padding: 3px 8px; }
+.lv-h { flex: 0 0 60px; padding: 3px 8px; text-align: center; }
+.tri {
+  width: 0; height: 0; flex: 0 0 auto; margin: 0 5px 0 8px;
+  border-left: 6px solid var(--mac-line);
+  border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+}
+.lv-row.sel .tri { border-left-color: #fff; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* try-it-out box */
+.tryout { border: 1px solid #000; padding: 14px 16px 16px; margin: 18px 0; }
+.tryout textarea.w100 { min-height: 64px; }
+.tryout .tryout-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+.tryout .tryout-row label { font-size: var(--ui-sm); }
+.tryout .tryout-size { flex: 1; min-width: 140px; }
+.tryout .tryout-stage {
+  border: 1px solid #000; padding: 22px 16px; min-height: 90px;
+  max-height: 240px; max-width: 100%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  background: #fff;
+}
+.tryout .tryout-stage .ts { max-width: 100%; max-height: 100%; overflow: hidden; word-break: break-word; white-space: pre-wrap; }
+
+/* ---------- Font Details page: live preview ---------- */
+.live { border: 1px solid #000; padding: 20px; text-align: center; min-height: 70px;
+        max-height: 220px; max-width: 100%; overflow: hidden;
+        display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+.live .pv { font-size: var(--spec-lg); line-height: 1.4; word-break: break-word;
+            max-width: 100%; max-height: 100%; overflow: hidden; }
+details.adv { border: 1px solid #000; margin-bottom: 14px; }
+details.adv > summary { cursor: pointer; padding: 8px 10px; font-weight: bold; }
+.adv-body { padding: 4px 10px 10px; }
+@media (max-width: 520px) { .two { grid-template-columns: 1fr; } }
+
+/* ---------- Font Editor page ---------- */
+.editor-grid { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+.panel { border: 1px solid #000; padding: 14px; }
+.control { margin-bottom: 14px; }
+.control label { display: flex; justify-content: space-between; gap: 10px; font-size: var(--ui-sm); margin-bottom: 5px; }
+.control input[type="range"] { width: 100%; }
+.preview-stage {
+  border: 1px solid #000; background: #fff; min-height: 300px; max-height: 300px;
+  max-width: 100%; padding: 26px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.preview-text {
+  max-width: 100%; max-height: 100%; overflow: hidden;
+  word-break: break-word; white-space: pre-wrap;
+}
+.download-box { border: 1px solid #000; padding: 10px; margin-bottom: 12px; }
+@media (max-width: 760px) { .editor-grid { grid-template-columns: 1fr; } }
+
+/* ---------- the Finder's disk window ---------- */
+/* The applications live as icons in a window you open them from, which is what this site is:
+   a small system with a few programs in it. The header line is the Finder's — how many things
+   are in here, and what is on the disk. */
+.desk-app { align-items: flex-start; }
+.desk-window { width: 100%; max-width: 580px; min-width: 0 !important; }
+.folder-info {
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  padding: 4px 12px; font-size: var(--ui-xs); background: #fff;
+}
+.folder-info .fi-hint { margin-left: auto; color: #6b6b6b; }
+.icon-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 10px 4px; margin: 0; padding: 22px 16px 30px; list-style: none;
+  background: #fff; min-height: 190px;
+}
+.icon-grid > li { display: flex; justify-content: center; }
+.desk-icon {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  width: 100%; padding: 5px 2px; text-decoration: none; color: var(--mac-line);
+  cursor: default; -webkit-user-select: none; user-select: none;
+}
+.di-glyph {
+  width: 32px; height: 32px; flex: 0 0 auto;
+  background: var(--i) center / 32px 32px no-repeat;
+  image-rendering: pixelated;
+}
+.di-name {
+  font-size: var(--ui-xs); line-height: 1.3; text-align: center;
+  padding: 1px 4px; max-width: 100%; word-break: break-word;
+}
+/* Selection darkens the icon and reverses the name, which is what the Finder did once icons
+   had colour. Inverting is wrong here: the negative of a blue folder is an orange one. */
+.desk-icon.sel .di-glyph { filter: brightness(.55); }
+.desk-icon.sel .di-name { background: var(--mac-line); color: #fff; }
+.desk-icon:focus-visible { outline: 2px solid var(--mac-line); outline-offset: 1px; }
+
+/* Things that sit on the desktop rather than in a window: the disk at the top right, the
+   Trash at the bottom right, both where they always were. */
+.desk-shortcut {
+  position: absolute; right: 26px; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 4px; background: none; border: none; cursor: default;
+  color: var(--mac-line); font-family: var(--font-ui);
+}
+.desk-shortcut .di-name { background: #fff; font-size: var(--ui-xs); padding: 1px 4px; }
+.desk-shortcut.sel .di-glyph { filter: brightness(.55); }
+.desk-shortcut.sel .di-name { background: var(--mac-line); color: #fff; }
+.desk-shortcut:focus-visible { outline: 2px solid var(--mac-line); }
+.disk-icon { top: 12px; }
+.trash-can { bottom: 20px; }
+/* the Finder window is put away rather than navigated away from, so it can come back */
+.desk-window[hidden] { display: none; }
+
+/* The icons. Drawn from whole pixels on a 32x32 grid so they stay hard-edged — the same
+   constraint the originals were drawn under — and coloured the way System 7 coloured them: one
+   identifying shape carries the hue, everything else stays white with a black outline.
+
+   These are background images from self-coloured data URIs, not masks, so the colour lives
+   inside the SVG; `color` and `currentColor` have no effect on them. */
+.i-app-soulfont { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' stroke='%23000' d='M6.5 2.5h14l5 5v22h-19z'/%3E%3Cpath fill='none' stroke='%23000' d='M20.5 2.5v5h5'/%3E%3Cpath fill='%234d7fd4' d='M15 11h2v2h-2zM14 13h1v3h-1zM17 13h1v3h-1zM13 16h1v3h-1zM18 16h1v3h-1zM12 19h1v6h-1zM19 19h1v6h-1zM14 19h4v2h-4z'/%3E%3C/svg%3E"); }
+.i-app-letter   { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' stroke='%23000' d='M6.5 2.5h14l5 5v22h-19z'/%3E%3Cpath fill='none' stroke='%23000' d='M20.5 2.5v5h5'/%3E%3Cpath fill='%23c33b3b' d='M10 12h12v1H10zM10 15h12v1H10zM10 18h12v1H10zM10 21h12v1H10zM10 24h7v1h-7z'/%3E%3C/svg%3E"); }
+.i-app-maker    { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' stroke='%23000' d='M4.5 2.5h13l5 5v22h-18z'/%3E%3Cpath fill='%23000' d='M8 12h9v1H8zM8 15h9v1H8zM8 18h6v1H8z'/%3E%3Cpath fill='%23f2c53d' stroke='%23000' d='M25.5 12.5l4 4-11 11-5 1 1-5z'/%3E%3Cpath fill='%23000' d='M14 27h4v1h-4z'/%3E%3C/svg%3E"); }
+.i-app-folder   { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%234d7fd4' stroke='%23000' d='M2.5 6.5h11l3 4h13v19h-27z'/%3E%3Cpath fill='none' stroke='%23000' d='M2.5 13.5h27'/%3E%3C/svg%3E"); }
+.i-app-mac      { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' stroke='%23000' d='M4.5 2.5h23v27h-23z'/%3E%3Cpath fill='%234f9455' stroke='%23000' d='M8.5 6.5h15v11h-15z'/%3E%3Cpath fill='%23000' d='M8 19h16v1H8z'/%3E%3Cpath fill='%23fff' stroke='%23000' d='M8.5 22.5h8v3h-8z'/%3E%3C/svg%3E"); }
+.i-app-disk     { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23b9b9b9' stroke='%23000' d='M2.5 7.5h27v17h-27z'/%3E%3Cpath fill='%23000' d='M3 10h26v1H3z'/%3E%3Cpath fill='%23fff' stroke='%23000' d='M20.5 13.5h6v8h-6z'/%3E%3Cpath fill='%234d7fd4' d='M6 14h11v1H6zM6 17h11v1H6zM6 20h7v1H6z'/%3E%3C/svg%3E"); }
+.i-app-trash    { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' stroke='%23000' d='M11.5 2.5h9v2h-9z'/%3E%3Cpath fill='%23fff' stroke='%23000' d='M6.5 5.5h19v3h-19z'/%3E%3Cpath fill='%23fff' stroke='%23000' d='M9.5 9.5h13v20h-13z'/%3E%3Cpath fill='%23000' d='M13 12h1v15h-1zM18 12h1v15h-1z'/%3E%3C/svg%3E"); }
+
+/* ---------- draggable windows ----------
+   A window you can move is most of what makes a desktop feel like one. The title bar is the
+   handle, as it always was; the close box returns you to the Finder. */
+.window[data-drag] > .title-bar { cursor: default; }
+.window.is-dragging { user-select: none; }
+.title-bar a.close { text-decoration: none; cursor: default; }
+
+/* ---------- alerts ----------
+   alert() opens the host system's own dialog — a rounded, blue-buttoned panel in the system
+   font sitting on top of a 1991 desktop. That is the same problem the native <select> had.
+   This is the era's alert instead.
+
+   The frame is composed from system.css, which ships the whole System 7 dialog vocabulary and
+   which nothing in the project had used: .outer-border (2px rule, 3px gap) wrapping
+   .inner-border (3.5px top and bottom, 5px at the sides) is the double rule an alert wore, and
+   .alert-box supplies the white ground. Only what system.css has no opinion about is written
+   here: where the thing sits, and the icon.
+
+   A System 7 alert was modal all the way up — it blocked the menu bar too, and the menus
+   greyed. The backdrop therefore sits above the pull-down menus (z-index 1200), not below. */
+.sf-alert-backdrop {
+  position: fixed; inset: 0; z-index: 2000;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 92px 20px 20px;
+  /* System 7 did not dim the screen behind an alert; it just took the keyboard. */
+  background: none;
+}
+.sf-alert {
+  background: #fff; max-width: 430px; min-width: 300px;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, .4);
+}
+.sf-alert .alert-contents { display: flex; align-items: flex-start; gap: 14px; padding: 4px 2px 0; }
+.sf-alert-icon {
+  width: 32px; height: 32px; flex: 0 0 32px;
+  background: var(--i) center / 32px 32px no-repeat;
+  image-rendering: pixelated;
+}
+.sf-alert-text {
+  flex: 1; min-width: 0; margin: 0;
+  font-size: var(--ui-md); line-height: 1.5; word-break: break-word;
+}
+/* the default button's ring needs its 7px of clearance, so the row is not flush to the frame */
+.sf-alert-buttons { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+/* The two alert icons the system used. Note was a little Macintosh — the same drawing the
+   About icon uses — and Caution was the black-and-yellow triangle. */
+.i-alert-note {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff' stroke='%23000' d='M4.5 2.5h23v27h-23z'/%3E%3Cpath fill='%234f9455' stroke='%23000' d='M8.5 6.5h15v11h-15z'/%3E%3Cpath fill='%23000' d='M8 19h16v1H8z'/%3E%3Cpath fill='%23fff' stroke='%23000' d='M8.5 22.5h8v3h-8z'/%3E%3C/svg%3E");
+}
+.i-alert-caution {
+  --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23f2c53d' stroke='%23000' stroke-width='1.5' d='M16 2.5 30 28.5 2 28.5Z'/%3E%3Cpath fill='%23000' d='M15 12h2v9h-2zM15 23h2v2h-2z'/%3E%3C/svg%3E");
+}
+
+/* a label that is not a <label>, because the control it names is a group rather than one field */
+.field-col .fc-label { font-weight: bold; }
+/* the checkbox reads as one line with its words, rather than a box floating beside them */
+.inline-check { display: inline-flex; align-items: center; gap: 7px; font-size: var(--ui-sm); }
+.meta-form .profile-editor { margin: 0; }
+.meta-form .profile-editor .stack { gap: 8px; }
+
+
+/* ---------- the desk ----------
+   Applications are windows on a surface rather than pages that replace one another, so the
+   desk is a positioning context and every window is placed in it. New windows cascade down and
+   to the right of the last, which is where the era put them. */
+#desk {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 22px);
+  overflow: hidden;
+}
+.win {
+  position: absolute;
+  display: flex; flex-direction: column;
+  max-height: calc(100% - 16px);
+  min-width: 0 !important;
+  margin: 0;
+  /* a window casts the era's hard offset shadow, not a blur */
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, .45);
+}
+.win.is-dragging { user-select: none; }
+.win > .window-pane,
+.win > .listview { min-height: 0; }
+.win > .window-pane { overflow-y: auto; }
+.win .title-bar,
+.win .inactive-title-bar { cursor: default; }
+
+/* System 7 marked the frontmost window by giving only it the striped title bar. An inactive
+   window kept its frame and lost its stripes, so you could tell at a glance which one the
+   keyboard and the menu bar belonged to. system.css draws both; this only supplies the parts
+   it leaves out for the inactive case. */
+.win .inactive-title-bar { background: none; }
+.win .inactive-title-bar .title { background: #fff; color: #7c7c7c; }
+.win .inactive-title-bar .close,
+.win .inactive-title-bar .zoom { visibility: hidden; }
+.win:not(.is-front) { box-shadow: 1px 1px 0 rgba(0, 0, 0, .3); }
+
+/* the desk owns the window's size now, so the page-level centring wrapper does not apply */
+#desk .win.app-window { max-width: none; }
+#desk .win .app { padding: 0; }
+
+/* the coverflow sizes itself to the window it is in rather than to the page */
+#desk .win .coverflow { max-width: 100%; }
+
+/* Panes sized against the viewport have to give that up inside a window: a window's height is
+   set by the desk and what is left below its title bar, not by the screen. */
+#desk .win .doc-scroll { height: auto; min-height: 200px; flex: 1 1 auto; }
+#desk .win.app-window > .window-pane { flex: 1 1 auto; }
+#desk .win .listview { flex: 0 0 auto; }
+
+@media (max-width: 720px) {
+  /* one window at a time on a small screen: stacking needs room the screen does not have */
+  #desk { height: auto; overflow: visible; padding-bottom: 90px; }
+  .win {
+    position: static !important;
+    width: auto !important; height: auto !important;
+    max-height: none; margin: 12px;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, .45);
+  }
+  .desk-shortcut { position: static; display: inline-flex; margin: 8px 12px; }
 }
