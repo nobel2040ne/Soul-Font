@@ -1,0 +1,24 @@
+# The build context must stay small: workdir/ alone holds ~1M generated files, and
+# Docker copies the whole context to the daemon before the first instruction runs.
+.git
+.venv
+**/__pycache__
+**/*.pyc
+**/.DS_Store
+**/.Rhistory
+
+soulfont/node_modules
+soulfont/workdir
+soulfont/uploads
+soulfont/staticfiles
+soulfont/db.sqlite3
+
+# checkpoints/ is the 183MB model, fetched at boot instead of baked into the image.
+soulfont/checkpoints
+
+# media/ is generated output, except the placeholder font every new row points at.
+soulfont/media/**
+!soulfont/media/ttf_files/MaruBuri-Regular.ttf
+
+docs
+*.md
