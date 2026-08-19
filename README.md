@@ -37,9 +37,12 @@ python manage.py runserver      # http://127.0.0.1:8000/
 
 The site opens on a System 7 desktop where each application is an icon you double-click.
 Sign up, open **New Font**, download the blank template, fill it in by hand and upload the
-PDF. The font's own page shows build progress — about two minutes for the common 2,350
-syllables — then downloads the family as a zip. From there you can rename it, set author and
-licence, or adjust stroke weight and spacing in the editor.
+PDF. The font's own page shows build progress — every font is the full 11,172 syllables, so
+give it time — then downloads the family as a zip. From there you can rename it and set the
+author, licence and copyright written into the file.
+
+There is one interface at every width. A narrow screen gets the same desktop, with icons and
+forms behaving as the plain links and forms they are in the markup.
 
 ## How it works
 

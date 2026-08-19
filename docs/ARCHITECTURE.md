@@ -19,8 +19,9 @@ process, so builds die with the web process and nothing retries.
 `/pybo/user/<id>/`, the build directory `workdir/fonts/<id>/`, the TTF basename
 `user_font_<id>.ttf`. `status`, `status_stage` and `status_percent` carry build progress and
 are written with `.update()` rather than `save()`, so the thread cannot roll back the TTF
-fields it wrote moments earlier. `show_on_home` marks the one font a user features in the
-gallery. `Font` and `Template` are legacy.
+fields it wrote moments earlier. `Font`, `Template`, `show_on_home` and `FontExport` are
+legacy: the gallery shows every finished font, and the adjusted-copy export it belonged to is
+gone.
 
 ## Pipeline
 
@@ -37,8 +38,10 @@ gallery. `Font` and `Template` are legacy.
 | 9 | metrics | `refine_metrics` | rewrites that file |
 | 10 | names, OS/2 | `set_font_metadata.apply_metadata` | rewrites that file |
 
-`char_layout.py` is the single definition of which cell holds which character: 4×7 per page,
-cells 0–27 the Korean style references, the rest `EXTRA_CHARS`. Change the printed template
+`char_layout.py` is the single definition of which cell holds which character: 10×13 on one
+page, cells 0–27 the Korean style references, the rest `EXTRA_CHARS` — the whole of printable
+ASCII plus ₩, ※ and °. It also owns the fractions `crop.py` trims off each cell, because how
+much is trimmed and how far down the guide glyph is printed are two halves of one decision. Change the printed template
 and this file changes with it. Cell count and blank style cells are validated before
 inference, so a bad upload is an error on the page rather than a garbage font.
 
@@ -50,8 +53,8 @@ mutable. GPU on Apple Silicon, CUDA opt-in, fp16 refused on Metal (it damages ev
 
 Light and Bold are the same `trace_regular` rasters with each glyph's distance field offset,
 then traced and fitted like Regular. All three use the fit measured once on Regular and saved
-to `glyph_fit.json`, so the editor's later exports match the family. Both are best-effort: a
-failure leaves Regular intact.
+to `glyph_fit.json`, so the family is fitted as one. Both are best-effort: a failure leaves
+Regular intact.
 
 Thresholds in `prepare_trace_images` and `glyph_vectorizer.py` are relative to the glyph's own
 stroke width or to the 1000-unit em, never to the frame. The reasoning is in those files.
@@ -67,16 +70,22 @@ workdir/fonts/<id>/           trace_regular/, trace_light/, trace_bold/, glyph_f
 media/ttf_files/              the finished TTFs
 ```
 
-All of `workdir/` is disposable.
+Most of `workdir/` is disposable — `crops/`, `configs/`, and the `svg/`, `svg_fonts/`,
+`ttf_fonts/` left behind by the legacy Node vectorizer are rebuilt whenever they are needed
+again. `flipped_result/`, `trace_regular|light|bold/`, `glyph_fit.json` and `glyphs/user_<id>/`
+hold the model's output and the fit measured from it; once they are gone the only way back to
+a font is to regenerate it from the original PDF.
 
 ## Frontend
 
-`base.html` owns the menu bar; pages fill `app_name`, `app_menus` and `content`. `retro.js`
-does pull-down menus, desktop patterns, the Coverflow/list switch and alerts. `system7.js` is
-the window manager, active only where `#desk` exists: it fetches an application's URL, lifts
-the `.window` element out of the response, runs that page's own scripts against it, and
-mirrors open windows into `location.hash`. Icons are links and forms are forms, so the site
-works with both scripts absent.
+One interface at every width, in `retro.css`. `base.html` owns the menu bar; pages fill
+`app_name`, `app_menus` and `content`. `retro.js` does pull-down menus, desktop patterns, the
+Coverflow/list switch and alerts. `system7.js` is the window manager, active only where
+`#desk` exists: it fetches an application's URL, lifts the `.window` element out of the
+response, runs that page's own scripts against it, and mirrors open windows into
+`location.hash`. Icons are links and forms are forms, so the site works with both scripts
+absent — which is also what a touch screen gets, since neither hovering a menu nor dragging a
+window has a thumb equivalent.
 
 ## Limits
 
