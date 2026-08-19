@@ -23,11 +23,13 @@
           {% csrf_token %}
           <div class="field-col">
             <label for="username">Username or email</label>
-            <input class="w100" id="username" type="text" name="username" placeholder="soulsoul" required>
+            <input class="w100" id="username" type="text" name="username" placeholder="soulsoul" required
+                   autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
           </div>
           <div class="field-col">
             <label for="password">Password</label>
-            <input class="w100" id="password" type="password" name="password" placeholder="••••••••" required>
+            <input class="w100" id="password" type="password" name="password" placeholder="••••••••" required
+                   autocomplete="current-password">
           </div>
           <div class="right-row">
             <a class="btn" href="{% url 'pw_reset' %}">Forgot?</a>
@@ -41,5 +43,4 @@
     </div>
   </div>
 
-  
 {% endblock %}

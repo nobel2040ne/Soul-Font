@@ -1,5 +1,5 @@
 {% extends 'pybo/base.html' %}
-{% load static %}
+{% load static versioned_static %}
 
 {% block title %}Letter{% endblock %}
 
@@ -16,11 +16,6 @@
 {% endblock %}
 
 {% block app_menus %}
-  {% comment %}
-  A Mac application installed its own menus when it came to the front, so the editor's
-  Edit, Size and Style menus live in the menu bar rather than as another toolbar. Command
-  keys are the ones the era used, and everything acts on the selection.
-  {% endcomment %}
   <span class="mb-menu" data-menu>
     <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">File</span>
     <ul role="menu">
@@ -75,12 +70,6 @@
 {% endblock %}
 
 {% block content %}
-  {% comment %}
-  One window, laid out like a word processor: title bar, then a toolbar of everything that
-  changes the document, then the document itself on a grey desk. It used to be a window
-  inside a window, with the font and paper pickers stacked above both — so the page asked
-  you to make three decisions before showing you what you were writing on.
-  {% endcomment %}
   <div class="app">
     <div data-drag class="window app-window doc-app">
       <div class="title-bar">
@@ -91,11 +80,6 @@
       <div class="separator"></div>
 
       {% if users %}
-      {% comment %}
-      The ribbon, laid out the way Word 5.0 laid one out: the pop-up menus that say what the
-      text is on the left, then square icon buttons in clusters, hairline rules between the
-      clusters. A toggle inverts when it is on. Row two is the page rather than the text.
-      {% endcomment %}
       <div class="ribbon">
         <select id="fontSel" class="rb-font" aria-label="Font">
           {% for ud in users %}{% if ud.ttf_file %}
@@ -140,7 +124,6 @@
           <option value="ratio-postcard">Postcard</option>
         </select>
 
-        {% comment %} swatches rather than names: each one shows the paper it selects {% endcomment %}
         <span class="designs" id="designs" role="group" aria-label="Paper design">
           <button class="design-btn design-plain sel" type="button" data-design="design-plain" title="Plain"></button>
           <button class="design-btn design-lined" type="button" data-design="design-lined" title="Lined"></button>
@@ -155,10 +138,6 @@
         <button class="ico" type="button" id="exportBtn" title="Save as a picture"><i class="i-disk"></i></button>
       </div>
 
-      {% comment %}
-      The ruler. Marked in real inches, because CSS defines one inch as 96px, so the numbers
-      describe the page rather than decorating it. Drag either marker to set the margins.
-      {% endcomment %}
       <div class="doc-ruler">
         <div class="rl-track" id="rlTrack">
           <span class="rl-mark" id="rlLeft" role="slider" tabindex="0" aria-label="Left margin"
@@ -168,7 +147,6 @@
         </div>
       </div>
 
-      {% comment %} the document, on the desk {% endcomment %}
       <div class="doc-scroll">
         <div id="paper" class="design-plain ratio-a4p">
           <div class="letter-body" id="letterBody" contenteditable="true" spellcheck="false"
@@ -197,7 +175,7 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="{% vstatic 'vendor/html2canvas/html2canvas.min.js' %}"></script>
   <script>
     (function () {
       var fontSel = document.getElementById('fontSel');
@@ -246,6 +224,17 @@
       var ratioSel = document.getElementById('ratioSel');
       if (ratioSel) ratioSel.addEventListener('change', function () {
         setGroupClass(paper, 'ratio-', ratioSel.value);
+      });
+
+      // ---- keep the selection while the toolbar is used ----
+      // Pressing a toolbar button focuses the button, and the document's selection goes with it.
+      // On iOS Safari it is gone before the click handler runs, so execCommand applies to
+      // nothing and Bold appears to do nothing at all. Preventing the default on pointerdown
+      // stops focus ever leaving the document, which is the only reliable fix — and it is better
+      // than the repair below it, because focusDoc() puts the caret back afterwards, and putting
+      // it back is not the same as never having moved it.
+      document.querySelectorAll('.ribbon .ico, .ribbon .design-btn').forEach(function (ctl) {
+        ctl.addEventListener('pointerdown', function (e) { e.preventDefault(); });
       });
 
       // ---- editing commands ----
@@ -436,10 +425,58 @@
       }
       document.addEventListener('selectionchange', syncRibbon);
 
+      // ---- the draft ----
+      // Nothing typed here was ever written down anywhere. On a desk that mattered less:
+      // Letter is a window you leave open. On a phone it sits behind a tab bar, so one tap
+      // on Browse took the letter with it and there was no way back. Saved as you type,
+      // restored when you return; Clear is the only thing that throws it away.
+      var DRAFT_KEY = 'soul-letter-draft';
+      var draftTimer;
+
+      function saveDraft() {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(function () {
+          try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify({
+              body: body.innerHTML, sign: sign.innerHTML, font: fontSel.value
+            }));
+          } catch (e) { /* private mode or quota: writing still works, it just is not kept */ }
+        }, 400);
+      }
+
+      function clearDraft() {
+        clearTimeout(draftTimer);
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+      }
+
+      function restoreDraft() {
+        var raw;
+        try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return; }
+        if (!raw) return;
+        var d;
+        try { d = JSON.parse(raw); } catch (e) { clearDraft(); return; }
+        if (d.body) body.innerHTML = d.body;
+        if (d.sign) sign.innerHTML = d.sign;
+        // ?font= is a choice made just now, on the way in, so it outranks the saved one
+        if (d.font && !wanted) {
+          var known = Array.prototype.some.call(fontSel.options, function (o) {
+            return o.value === d.font;
+          });
+          if (known) { fontSel.value = d.font; applyFont(); }
+        }
+        updateStatus();
+      }
+
+      body.addEventListener('input', saveDraft);
+      sign.addEventListener('input', saveDraft);
+      fontSel.addEventListener('change', saveDraft);
+      restoreDraft();
+
       // ---- clear ----
       document.getElementById('clearBtn').addEventListener('click', function () {
         body.textContent = '';
         sign.textContent = '';
+        clearDraft();
         body.focus();
         updateStatus();
       });
@@ -490,12 +527,22 @@
         var cs = window.getComputedStyle(paper);
         return { l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0 };
       }
+      /* The phone's paper draws a blue rule down its left margin, and that rule was a number
+         of its own — 25px from the edge of the sheet — while the writing starts wherever the
+         left padding says, which the reader drags with the marker above. Two numbers for one
+         edge: they disagreed out of the box (rule at 25, writing at 22, so every line began
+         three pixels inside the rule) and no amount of matching them by hand would have
+         survived the first drag. The margin publishes itself, and the rule is drawn from it. */
+      function publishMargin() {
+        paper.style.setProperty('--paper-margin-l', margins().l + 'px');
+      }
       function placeMarkers() {
         var m = margins(), w = paperWidth();
         markL.style.left = m.l + 'px';
         markR.style.left = (w - m.r) + 'px';
         markL.setAttribute('aria-valuenow', Math.round(m.l));
         markR.setAttribute('aria-valuenow', Math.round(m.r));
+        publishMargin();
       }
       function setMargin(side, px) {
         var w = paperWidth();

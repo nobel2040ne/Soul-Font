@@ -6,12 +6,6 @@
 {% block app_name %}New Font{% endblock %}
 
 {% block content %}
-  {% comment %}
-  Three numbered steps, down the page, in the order you do them. They used to sit in a two-column
-  grid, which presents a sequence as a choice between two things — and there were only two of
-  them, because the page never asked what the font should be called. Every font was created as
-  the placeholder name and there was nowhere in the app to change it afterwards.
-  {% endcomment %}
   <div class="app">
     <div data-drag class="window app-window narrow">
       <div class="title-bar">
@@ -22,15 +16,13 @@
       <div class="separator"></div>
 
       <div class="window-pane">
-        <p class="lede">Download the template, write it by hand, then upload the PDF.</p>
-
         <form id="fontForm" action="{% url 'learning' %}" method="post" enctype="multipart/form-data">
           {% csrf_token %}
 
           <ol class="steps">
             <li class="step-box">
               <h3><span class="step-n">1</span>Download the template</h3>
-              <p>Print every page — the Korean samples plus English and symbols — and write in each cell. On a tablet, open the PDF in your notes app and draw straight into it.</p>
+              <p>One page, 125 boxes: Korean, then English, digits and symbols. Fill in every one.</p>
               <a class="btn" href="{% url 'download_template' %}">Get Template</a>
             </li>
 
@@ -49,34 +41,13 @@
 
             <li class="step-box">
               <h3><span class="step-n">3</span>Name it</h3>
-              <p>This becomes the font's name wherever it is installed, so pick something you will recognise in a font menu.</p>
+              <p>The name you will see in a font menu.</p>
               <div class="field-col">
                 <label class="sr-only" for="font_name">Font name</label>
                 <input class="w100" id="font_name" type="text" name="font_name"
                        value="{{ suggested_name }}" placeholder="My Handwriting" maxlength="60" required>
               </div>
 
-              <div class="field-col">
-                <span class="fc-label">Coverage</span>
-                <div class="speed" id="speedGroup">
-                  <label class="sel">
-                    <input type="radio" name="speed" value="fast" checked>
-                    <span class="name">Fast (recommended)</span>
-                    <div class="desc">The ~2,350 syllables everyday Korean actually uses. About two minutes.</div>
-                  </label>
-                  <label>
-                    <input type="radio" name="speed" value="full">
-                    <span class="name">Complete</span>
-                    <div class="desc">All 11,172 syllables. Much slower, and most of them never appear in normal text.</div>
-                  </label>
-                </div>
-              </div>
-
-              {% comment %}
-              Demoted. GPU and CPU produce glyph-for-glyph identical output and 'auto' already
-              falls back on its own, so this question changes nothing the user can see — yet it
-              was sitting at the same size as Coverage, which does change the result.
-              {% endcomment %}
               <details class="tip">
                 <summary class="tip-title">Advanced</summary>
                 <div class="field-col">
@@ -85,12 +56,12 @@
                     <label class="sel">
                       <input type="radio" name="accelerator" value="auto" checked>
                       <span class="name">Automatic</span>
-                      <div class="desc">Uses the GPU when there is one. About 4x faster, and the glyphs are identical either way.</div>
+                      <div class="desc">Uses the GPU when there is one. About 4x faster, with the same glyphs.</div>
                     </label>
                     <label>
                       <input type="radio" name="accelerator" value="cpu">
                       <span class="name">CPU only</span>
-                      <div class="desc">Forces the slower path. There is no reason to pick this unless you are comparing them.</div>
+                      <div class="desc">Always uses the CPU.</div>
                     </label>
                   </div>
                 </div>
@@ -103,16 +74,14 @@
           </div>
         </form>
 
-        {% comment %}
-        Below the steps, not above them. Collapsed, this was taking the top of the page — the
-        position of most attention — while showing the least.
-        {% endcomment %}
         <details class="tip">
           <summary class="tip-title">Tips for the best results</summary>
           <ul>
-            <li>Write with <b>smooth, steady strokes</b>. Cleaner handwriting traces into a cleaner font.</li>
-            <li><b>English and symbols</b> are traced straight from your writing, so take extra care there.</li>
-            <li>On a tablet, import the PDF into your notes app, draw in each cell, and upload the export.</li>
+            <li>Write with smooth, steady strokes.</li>
+            <li>English and symbols are traced straight from your writing.</li>
+            <li>On a tablet, you can draw into the PDF in a notes app and upload the export.</li>
+            <li>A phone camera can make the PDF. In Files, tap ⋯ and choose Scan Documents.</li>
+            <li>When scanning a printed sheet, fill the frame and keep the light even.</li>
           </ul>
         </details>
       </div>

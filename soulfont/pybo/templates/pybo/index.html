@@ -1,16 +1,11 @@
 {% extends 'pybo/base.html' %}
 {% load static %}
 
-{% block title %}Fonts{% endblock %}
+{% block title %}{{ page_name|default:"Fonts" }}{% endblock %}
 
-{% block app_name %}Fonts{% endblock %}
+{% block app_name %}{{ page_name|default:"Fonts" }}{% endblock %}
 
 {% block app_menus %}
-  {% comment %}
-  The Finder kept how you were looking at a window in a View menu with a tick beside the
-  current choice, so that is where this lives rather than in two push buttons above the
-  gallery. retro.js already persists the mode and reads ?view, so only the trigger moved.
-  {% endcomment %}
   <span class="mb-menu" data-menu>
     <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">File</span>
     <ul role="menu">
@@ -43,7 +38,7 @@
     {% if ud.ttf_file_bold %}@font-face { font-family: "SoulFont-{{ ud.id }}"; src: url("{{ ud.ttf_file_bold.url }}") format("truetype"); font-weight: 700; }{% endif %}
     .quote-{{ ud.id }} { font-family: "SoulFont-{{ ud.id }}", 'Galmuri11', sans-serif; }
     {% endif %}{% endfor %}
-  
+
 </style>
 {% endblock %}
 
@@ -52,7 +47,7 @@
     <div data-drag class="window app-window home-window">
       <div class="title-bar">
         <a class="close" href="{% url 'desktop' %}" aria-label="Close" data-close></a>
-        <h1 class="title">Fonts</h1>
+        <h1 class="title">{{ page_name|default:"Fonts" }}</h1>
         <span class="zoom" aria-hidden="true"></span>
       </div>
       <div class="separator"></div>
@@ -74,7 +69,7 @@
           <div id="directory" class="directory-view" hidden>
             {% for ud in users %}{% if ud.ttf_file %}
             <div class="directory-item">
-              <div class="directory-quote font-preview quote-{{ ud.id }}">{{ ud.quote|default:"…" }}</div>
+              <div class="directory-quote font-preview quote-{{ ud.id }}">{{ ud.quote|default:ud.font_name }}</div>
               <div class="directory-footer">
                 <div class="directory-user">
                   {% if ud.profile_image %}
@@ -86,8 +81,17 @@
                     <a class="profile-name" href="{% url 'user_page' ud.id %}">@ {{ ud.user.username }}</a>
                     <div class="muted">{{ ud.font_name }}</div>
                   </div>
+                  <time class="directory-time" datetime="{{ ud.created_at|date:'c' }}">{{ ud.created_at|date:"M j, Y" }}</time>
                 </div>
                 <div class="directory-actions">
+                  <button class="btn btn-like" type="button"
+                          data-like-url="{% url 'toggle_like' ud.id %}"
+                          data-liked="{% if ud.id in liked %}1{% else %}0{% endif %}"
+                          {% if not request.user.is_authenticated %}data-login-url="{% url 'login' %}"{% endif %}
+                          aria-pressed="{% if ud.id in liked %}true{% else %}false{% endif %}">
+                    <span class="like-glyph" aria-hidden="true">{% if ud.id in liked %}&#9829;{% else %}&#9825;{% endif %}</span>
+                    <span class="like-count">{% if ud.like_count %}{{ ud.like_count }}{% endif %}</span>
+                  </button>
                   <a class="btn" href="{% url 'user_page' ud.id %}">Open</a>
                   <a class="btn" href="{{ ud.ttf_file.url }}" download>Get</a>
                 </div>
@@ -105,7 +109,7 @@
             </div>
             <div class="separator"></div>
             <div class="window-pane">
-              <div class="soul-quote font-preview quote-{{ ud.id }}">{{ ud.quote|default:"…" }}</div>
+              <div class="soul-quote font-preview quote-{{ ud.id }}">{{ ud.quote|default:ud.font_name }}</div>
               <div class="card-foot">
                 <div class="directory-user compact">
                   {% if ud.profile_image %}
@@ -133,5 +137,4 @@
   </div>
 
 
-  
 {% endblock %}

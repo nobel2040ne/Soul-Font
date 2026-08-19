@@ -6,11 +6,6 @@
 {% block app_name %}Finder{% endblock %}
 
 {% block app_menus %}
-  {% comment %}
-  The Finder's own menus. File acts on what is selected in the disk window, which is why Open
-  starts out greyed: System 7 showed you a command existed before it told you that you could
-  not use it yet.
-  {% endcomment %}
   <span class="mb-menu" data-menu>
     <span class="mb-item" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">File</span>
     <ul role="menu">
@@ -34,11 +29,6 @@
 {% endblock %}
 
 {% block content %}
-  {% comment %}
-  The disk window. Applications are icons in it and you open one by double-clicking, the same
-  as the machine this is modelled on — so the site reads as a small system with a few programs
-  rather than a navigation bar with pages behind it.
-  {% endcomment %}
   <div id="desk">
     <div class="window desk-window">
       <div class="title-bar">
@@ -48,7 +38,6 @@
       </div>
       <div class="separator"></div>
 
-      {% comment %} the Finder's header line: how much is in here, and how much room is left {% endcomment %}
       <div class="folder-info">
         <span id="itemCount">&mdash;</span>
         <span>{{ font_count }} font{{ font_count|pluralize }} on disk</span>
@@ -91,10 +80,6 @@
       </ul>
     </div>
 
-    {% comment %}
-    The disk this all lives on, and the Trash, in the corners they always sat in. Both are on
-    the desk itself, so windows stack over them.
-    {% endcomment %}
     <button class="desk-shortcut disk-icon" type="button" id="diskIcon" aria-label="Open Soul Font">
       <span class="di-glyph i-app-disk" aria-hidden="true"></span>
       <span class="di-name">Soul Font</span>
@@ -149,6 +134,10 @@
       desk.addEventListener('click', function (e) {
         var icon = e.target.closest('.desk-icon');
         if (!icon) return;
+        // Select-then-open needs two distinct gestures, and a touch screen only has the one.
+        // There an icon goes back to being what it already is in the markup — a link — and a
+        // tap follows it.
+        if (window.SoulShell && SoulShell.mobile()) return;
         e.preventDefault();
         e.stopPropagation();
         if (e.detail > 1) return;

@@ -23,31 +23,35 @@
           <div class="field-col">
             <label for="username">Username *</label>
             <input class="w100" id="username" type="text" name="username" placeholder="soulsoul"
-                   value="{{ form.username.value|default:'' }}" required>
+                   value="{{ form.username.value|default:'' }}" required
+                   autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
             {% for e in form.username.errors %}<div class="err">{{ e }}</div>{% endfor %}
           </div>
           <div class="two">
             <div class="field-col">
               <label for="first_name">First name *</label>
               <input class="w100" id="first_name" type="text" name="first_name" placeholder="Gildong"
-                     value="{{ form.first_name.value|default:'' }}" required>
+                     value="{{ form.first_name.value|default:'' }}" required
+                     autocomplete="given-name">
               {% for e in form.first_name.errors %}<div class="err">{{ e }}</div>{% endfor %}
             </div>
             <div class="field-col">
               <label for="last_name">Last name</label>
               <input class="w100" id="last_name" type="text" name="last_name" placeholder="Hong"
-                     value="{{ form.last_name.value|default:'' }}">
+                     value="{{ form.last_name.value|default:'' }}" autocomplete="family-name">
               {% for e in form.last_name.errors %}<div class="err">{{ e }}</div>{% endfor %}
             </div>
           </div>
           <div class="field-col">
             <label for="password1">Password *</label>
-            <input class="w100" id="password1" type="password" name="password1" placeholder="Password" required>
+            <input class="w100" id="password1" type="password" name="password1" placeholder="Password" required
+                   autocomplete="new-password">
             {% for e in form.password1.errors %}<div class="err">{{ e }}</div>{% endfor %}
           </div>
           <div class="field-col">
             <label for="password2">Confirm password *</label>
-            <input class="w100" id="password2" type="password" name="password2" placeholder="Re-enter password" required>
+            <input class="w100" id="password2" type="password" name="password2" placeholder="Re-enter password" required
+                   autocomplete="new-password">
             {% for e in form.password2.errors %}<div class="err">{{ e }}</div>{% endfor %}
           </div>
           <div class="right-row">
@@ -61,5 +65,4 @@
     </div>
   </div>
 
-  
 {% endblock %}

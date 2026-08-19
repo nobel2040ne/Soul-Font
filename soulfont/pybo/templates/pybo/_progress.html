@@ -1,22 +1,17 @@
-{% comment %}
-Generation progress. Included by user_page.html, which is where an upload lands.
-Renders nothing once the font is done, so finished pages are unaffected.
-Expects `user_data` in context.
-{% endcomment %}
-{% if user_data.status == 'failed' %}
+{% if job.status == 'failed' %}
   <div class="gen-box gen-failed" role="alert">
-    <h3>Generation failed</h3>
-    <p class="gen-stage">{{ user_data.status_error|default:"Something went wrong while building your font." }}</p>
-    <a class="btn default" href="{% url 'create_font' %}">Try again</a>
+    <h3>{{ fail_title|default:"Generation failed" }}</h3>
+    <p class="gen-stage">{{ job.status_error|default:"Something went wrong." }}</p>
+    <a class="btn default" href="{{ retry_url }}">Try again</a>
   </div>
-{% elif user_data.status != 'done' %}
-  <div class="gen-box" id="genBox" data-status-url="{% url 'font_status' user_data.id %}"
+{% elif job.status != 'done' %}
+  <div class="gen-box" id="genBox" data-status-url="{{ status_url }}"
        role="status" aria-live="polite">
-    <h3>Building your font</h3>
-    <p class="gen-stage" id="genStage">{{ user_data.status_stage|default:"Queued" }}</p>
+    <h3>{{ busy_title|default:"Building your font" }}</h3>
+    <p class="gen-stage" id="genStage">{{ job.status_stage|default:"Queued" }}</p>
     <div class="gen-bar"><div class="gen-bar-fill" id="genFill"
-         style="width: {{ user_data.status_percent }}%"></div></div>
-    <p class="hint">About two minutes. You can leave and come back.</p>
+         style="width: {{ job.status_percent }}%"></div></div>
+    <p class="hint">{{ busy_note|default:"About two minutes. You can leave and come back." }}</p>
   </div>
   <script>
     (function () {
@@ -31,10 +26,15 @@ Expects `user_data` in context.
           .then(function (d) {
             stage.textContent = d.stage || 'Working…';
             fill.style.width = (d.percent || 0) + '%';
-            // Reload rather than swapping the face in place: the finished page differs in
+            // Redraw rather than swapping the face in place: the finished page differs in
             // more than the type — download button, weight count, details panel.
+            //
+            // On the desktop this box lives inside a window on a desk that may have several
+            // more open, and reloading the document closes all of them. There, the one window
+            // that has changed redraws itself; everywhere else — a standalone page, and every
+            // page on a phone — a reload is exactly right.
             if (d.status === 'done' || d.status === 'failed') {
-              window.location.reload();
+              if (!(window.SoulSystem && SoulSystem.refresh(box))) window.location.reload();
               return;
             }
             setTimeout(poll, 3000);

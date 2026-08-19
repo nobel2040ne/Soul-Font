@@ -8,17 +8,12 @@ class Font(models.Model):
 
     def __str__(self):
         return self.text
-    
+
 class UserData(models.Model):
-    # One row per *font*. A user may own several, so this is a ForeignKey (it used to
-    # be OneToOne). The row's own primary key (id) identifies the font everywhere —
-    # URLs, FONT/ working dirs, and generated TTF basenames.
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='fonts', default=None)
     font_name = models.CharField(max_length=100, default='Default Font')
     profile_image = models.ImageField(upload_to='profiles/', null=True, blank=True)
 
-    # The single font each user features on the public Home page. At most one of a
-    # user's fonts has this set; selecting a new one clears the others.
     show_on_home = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
@@ -29,15 +24,10 @@ class UserData(models.Model):
     ttf_file = models.FileField(
       upload_to='ttf_files/',
       default='ttf_files/MaruBuri-Regular.ttf')
-    # Synthetic weights generated alongside the Regular one (blank until generated).
     ttf_file_light = models.FileField(upload_to='ttf_files/', null=True, blank=True)
     ttf_file_bold = models.FileField(upload_to='ttf_files/', null=True, blank=True)
     quote = models.TextField()
 
-    # Generation progress. The pipeline runs in a background thread for ~2 minutes, so
-    # without this a crashed run and a slow one look identical from the page.
-    # 'done' is the default so every row that predates this field stays valid — only
-    # rows created by an upload from here on start at 'pending'.
     STATUS_PENDING = 'pending'
     STATUS_RUNNING = 'running'
     STATUS_DONE = 'done'
@@ -58,7 +48,11 @@ class UserData(models.Model):
         """True when the font on disk is this user's own, not the bundled placeholder."""
         return self.status == self.STATUS_DONE and bool(self.ttf_file)
 
-    # User-editable font metadata (written into the TTF by set_font_metadata.py)
+    @property
+    def weight_count(self):
+        """How many weights this font actually holds."""
+        return sum(1 for f in (self.ttf_file, self.ttf_file_light, self.ttf_file_bold) if f)
+
     author = models.CharField(max_length=100, blank=True, default='')
     copyright = models.CharField(max_length=200, blank=True, default='')
     license_text = models.CharField(max_length=200, blank=True, default='')
@@ -71,7 +65,50 @@ class UserData(models.Model):
 
     def __str__(self):
         return f"{self.user.username} – {self.font_name}"
-    
+
+class Like(models.Model):
+    """One person having liked one font."""
+    font = models.ForeignKey(UserData, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='font_likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['font', 'user'], name='uniq_like_font_user'),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} \u2661 {self.font.font_name}"
+
+class FontExport(models.Model):
+    """One run of the editor's "Export Adjusted Copy"."""
+    font = models.ForeignKey(UserData, on_delete=models.CASCADE, related_name='exports')
+    token = models.CharField(max_length=8, unique=True)
+
+    stroke_adjust = models.SmallIntegerField(default=0)
+    letter_spacing_units = models.SmallIntegerField(default=0)
+    glyph_scale = models.FloatField(default=1.0)
+
+    ttf_file = models.FileField(upload_to='ttf_files/', null=True, blank=True)
+
+    STATUS_CHOICES = UserData.STATUS_CHOICES
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES,
+                              default=UserData.STATUS_PENDING)
+    status_stage = models.CharField(max_length=60, blank=True, default='')
+    status_percent = models.PositiveSmallIntegerField(default=0)
+    status_error = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+    @property
+    def is_ready(self):
+        return self.status == UserData.STATUS_DONE and bool(self.ttf_file)
+
+    def __str__(self):
+        return f"{self.font.font_name} export {self.token} ({self.status})"
+
 class Template(models.Model):
     user = models.ForeignKey(UserData, on_delete=models.CASCADE, related_name='templates', null=True)
     name = models.CharField(max_length=100)
