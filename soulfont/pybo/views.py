@@ -1,12 +1,16 @@
-from django.shortcuts import render, redirect, get_object_or_404  # type: ignore
-from django.http import FileResponse, Http404, JsonResponse  # type: ignore
-from django.core.files.storage import FileSystemStorage  # type: ignore
-from django.conf import settings  # type: ignore
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.http import FileResponse, Http404, JsonResponse
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout #type: ignore
 from django.contrib.auth.forms import UserCreationForm #type: ignore
 from django.contrib.auth.decorators import login_required #type: ignore
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db.models import Count
 
-from .models import Font, UserData
+from .models import Font, Like, UserData
 from .forms import CustomUserCreationForm
 
 import io, os, json, threading, shutil, subprocess, uuid, zipfile
@@ -14,7 +18,6 @@ from foundry.font_processor import (
     AUTO_BOLD_AMOUNT,
     AUTO_LIGHT_AMOUNT,
     FontStyleProcessor,
-    DEFAULT_CHARSET,
     make_weight_variant,
     prepare_trace_images,
     script_fit_scales,
@@ -29,8 +32,7 @@ FULL_CHARSET = os.path.join(settings.BASE_DIR, 'data', 'charset', 'korean11172.t
 DEFAULT_TTF = 'ttf_files/MaruBuri-Regular.ttf'  # placeholder until a font is generated
 
 def desktop(request):
-    """The Finder. Applications live in a disk window you open them from, which is what the
-    site is: a small system with a handful of programs in it rather than a set of pages."""
+    """The Finder. Applications live in a disk window you open them from, which is what the"""
     return render(request, 'pybo/desktop.html', {
         'font_count': (UserData.objects.exclude(ttf_file=DEFAULT_TTF)
                        .exclude(ttf_file='').count()),
@@ -38,28 +40,28 @@ def desktop(request):
                      if request.user.is_authenticated else 0),
     })
 
-
+@ensure_csrf_cookie
 def index(request):
-    # Home shows one card per generated font the owner has opted to display.
+    """The gallery, and on a phone the feed."""
     users = (UserData.objects.select_related('user')
-             .filter(show_on_home=True)
              .exclude(ttf_file=DEFAULT_TTF)
              .exclude(ttf_file='')
+             .annotate(like_count=Count('likes'))
              .order_by('-created_at', '-id'))
+    liked = set()
+    if request.user.is_authenticated:
+        liked = set(Like.objects.filter(user=request.user).values_list('font_id', flat=True))
     fonts = Font.objects.all()
-    return render(request, 'pybo/index.html', {'fonts': fonts, 'users': users})
+    return render(request, 'pybo/index.html',
+                  {'fonts': fonts, 'users': users, 'liked': liked})
 
 def signup_view(request):
-    # Both paths use the same form. The POST path used to build a plain UserCreationForm,
-    # which has no first_name/last_name — so the page asked for a name, marked it required,
-    # and then silently dropped it. Every account created that way has an empty name.
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect('index')
-        # falls through to render the bound form, so the template can show what went wrong
     else:
         form = CustomUserCreationForm()
     return render(request, 'pybo/signup.html', {'form': form})
@@ -89,31 +91,25 @@ def admin_page(request):
 
 @login_required
 def my_page(request):
-    """Send the signed-in user to their most recent font, or to create one if they
-    have none yet. The menubar 'My Page' link uses this since a user now owns many."""
-    font = request.user.fonts.order_by('-created_at', '-id').first()
-    if font is None:
+    """The signed-in user's own fonts, as a list."""
+    users = (request.user.fonts.select_related('user')
+             .annotate(like_count=Count('likes'))
+             .order_by('-created_at', '-id'))
+    if not users.exists():
         return redirect('create_font')
-    return redirect('user_page', font_id=font.id)
+    liked = set(Like.objects.filter(user=request.user).values_list('font_id', flat=True))
+    return render(request, 'pybo/index.html',
+                  {'fonts': Font.objects.all(), 'users': users, 'liked': liked,
+                   'page_name': 'My Fonts'})
 
 @login_required
 def user_page(request, font_id):
     user_data = get_object_or_404(UserData.objects.select_related('user'), id=font_id)
     is_owner = request.user.id == user_data.user_id
 
-    # Owner picks this font as the single one shown on Home, clearing their others.
-    if request.method == 'POST' and is_owner and 'set_home' in request.POST:
-        user_data.user.fonts.update(show_on_home=False)
-        user_data.user.fonts.filter(id=user_data.id).update(show_on_home=True)
-        return redirect('user_page', font_id=user_data.id)
-
-    # Metadata is edited in place here rather than on a separate page, so the details you
-    # are looking at are the ones you change.
     if request.method == 'POST' and is_owner and 'save_metadata' in request.POST:
         save_font_metadata(user_data, request.POST)
 
-        # Quote and picture used to be editable only on result.html, which nothing linked to.
-        # They belong with the rest of the font's details, so the save handles them here.
         if 'quote' in request.POST:
             user_data.quote = request.POST.get('quote', '').strip()
 
@@ -131,7 +127,6 @@ def user_page(request, font_id):
         restamp_font_files(user_data)
         return redirect('user_page', font_id=user_data.id)
 
-    # All of the owner's fonts, for the switcher at the top of the window.
     user_fonts = user_data.user.fonts.order_by('-created_at', '-id')
     context = {
         'user_data': user_data,
@@ -144,15 +139,10 @@ def user_page(request, font_id):
         'ttf_file_light': user_data.ttf_file_light,
         'ttf_file_bold': user_data.ttf_file_bold,
         'quote': user_data.quote,
-        # Light/Bold are best-effort, so say how many weights the download actually holds.
-        'weight_count': sum(1 for f in (user_data.ttf_file, user_data.ttf_file_light,
-                                        user_data.ttf_file_bold) if f),
     }
     return render(request, 'pybo/user_page.html', context)
 
 def create_font(request):
-    # The name field starts filled rather than empty. Every font used to be created as the
-    # placeholder because the page never asked, and nothing in the app could rename it.
     suggested = DEFAULT_FONT_NAME
     if request.user.is_authenticated:
         taken = set(request.user.fonts.values_list('font_name', flat=True))
@@ -178,14 +168,9 @@ def _clamp_float(value, default, low, high):
 def _has_pngs(path):
     return os.path.isdir(path) and any(f.lower().endswith('.png') for f in os.listdir(path))
 
-# Outlines come from the Python curve fitter. generateTTF.js (ImageTracer) stays available
-# behind SOULFONT_VECTORIZER=imagetracer as an escape hatch, but it emits mostly straight
-# segments, so its output looks faceted next to a real font.
 def _vectorize(glyph_dir, out_path, font_basename, font_id):
     """Trace a directory of glyph PNGs into a TTF at out_path."""
     if os.environ.get('SOULFONT_VECTORIZER', '').lower() != 'imagetracer':
-        # Tell the tracer how much each script will be scaled afterwards, so its
-        # tolerances mean the same thing in the finished font for both.
         return build_ttf(glyph_dir, out_path, font_basename,
                          fit_scales=script_fit_scales(glyph_dir))
 
@@ -202,9 +187,6 @@ def _vectorize(glyph_dir, out_path, font_basename, font_id):
     shutil.move(src, out_path)
     return out_path
 
-# How the font's Hangul and Latin were sized and spaced when it was first generated. Saved
-# next to the working glyphs so later exports (the editor) can match the family instead of
-# re-fitting a stroke-adjusted glyph set to a different size.
 FIT_FILE = 'glyph_fit.json'
 
 def _save_fit(user_font_dir, fit):
@@ -223,94 +205,8 @@ def _load_fit(user_font_dir):
     except Exception:
         return None
 
-@login_required
-def font_editor(request, font_id):
-    user_data = get_object_or_404(UserData, id=font_id)
-    if request.user.id != user_data.user_id:
-        return redirect('user_page', font_id=font_id)
-
-    download_url = None
-    message = ''
-    error = ''
-
-    if request.method == 'POST':
-        stroke = _clamp_int(request.POST.get('stroke_adjust'), 0, -5, 5)
-        letter_spacing = _clamp_int(request.POST.get('letter_spacing_units'), 0, -120, 360)
-        glyph_scale = _clamp_float(request.POST.get('glyph_scale'), 1.0, 0.65, 1.35)
-
-        try:
-            user_font_dir = os.path.join(settings.BASE_DIR, 'workdir', 'fonts', str(font_id))
-            # Stroke weight is applied on the prepared high-resolution glyphs, where an
-            # edge shift is a fraction of a stroke rather than a whole model pixel.
-            source_dir = os.path.join(user_font_dir, 'trace_regular')
-            if not _has_pngs(source_dir):
-                raw_dir = os.path.join(user_font_dir, 'flipped_result')
-                if not _has_pngs(raw_dir):
-                    raw_dir = os.path.join(settings.BASE_DIR, 'workdir', 'glyphs', f'user_{font_id}')
-                if not _has_pngs(raw_dir):
-                    raise FileNotFoundError('No generated glyph PNG directory found. Generate the font first.')
-                prepare_trace_images(raw_dir, source_dir)
-
-            variant_id = uuid.uuid4().hex[:8]
-            input_dir_name = f'editor_{variant_id}'
-            variant_dir = os.path.join(user_font_dir, input_dir_name)
-            if stroke < 0:
-                make_weight_variant(source_dir, variant_dir, weight='light', amount=abs(stroke))
-                weight_label = 'Light'
-            elif stroke > 0:
-                make_weight_variant(source_dir, variant_dir, weight='bold', amount=stroke)
-                weight_label = 'Bold'
-            else:
-                make_weight_variant(source_dir, variant_dir, weight='regular', amount=0)
-                weight_label = 'Regular'
-
-            font_basename = f'user_font_{font_id}_Edited_{variant_id}'
-            final_name = f'{font_basename}.ttf'
-            final_path = os.path.join(TTF_OUTPUT_DIR, final_name)
-            _vectorize(variant_dir, final_path, font_basename, font_id)
-            # Reuse the family's original fit so the export stays the same size as the
-            # generated weights — a stroke-adjusted glyph set would otherwise be fitted to
-            # a different size on its own.
-            refine_metrics(final_path, fit=_load_fit(user_font_dir))
-            adjust_font_geometry(final_path, letter_spacing=letter_spacing, glyph_scale=glyph_scale)
-            apply_metadata(
-                final_path,
-                f'{user_data.font_name} Edited',
-                user_id=str(font_id),
-                designer=user_data.author,
-                copyright=user_data.copyright,
-                license_text=user_data.license_text,
-                license_url=user_data.license_url,
-                description=user_data.description,
-                version=user_data.version,
-                weight=weight_label,
-            )
-            download_url = os.path.join(settings.MEDIA_URL, 'ttf_files', final_name)
-            message = f'Edited {weight_label} font exported.'
-        except subprocess.CalledProcessError as e:
-            error = e.stderr or str(e)
-        except Exception as e:
-            error = str(e)
-
-    context = {
-        'user_data': user_data,
-        'profile_user': user_data.user,
-        'font_name': user_data.font_name,
-        'ttf_file': user_data.ttf_file,
-        'ttf_file_light': user_data.ttf_file_light,
-        'ttf_file_bold': user_data.ttf_file_bold,
-        'download_url': download_url,
-        'message': message,
-        'error': error,
-    }
-    return render(request, 'pybo/font_editor.html', context)
-
 def letter(request):
-    # Letter composer: pick a font (sliding carousel), write a note, choose a paper
-    # design, and export the result as a PNG (done client-side). The picker mirrors
-    # Home — only each user's featured (home) font, never the default placeholder.
     users = (UserData.objects.select_related('user')
-             .filter(show_on_home=True)
              .exclude(ttf_file=DEFAULT_TTF)
              .exclude(ttf_file='')
              .order_by('-created_at', '-id'))
@@ -320,12 +216,11 @@ def about(request):
     return render(request, 'pybo/about.html')
 
 def download_template(request):
-    file_path = os.path.join(settings.STATICFILES_DIRS[0], 'templates', '28_template.pdf')
-    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='28_template.pdf')
-
+    file_path = os.path.join(settings.STATICFILES_DIRS[0], 'templates', 'soulfont_template.pdf')
+    return FileResponse(open(file_path, 'rb'), as_attachment=True,
+                        filename='soulfont_template.pdf')
 
 METADATA_FIELDS = ('author', 'copyright', 'license_text', 'license_url', 'description')
-
 
 def save_font_metadata(user_data, post):
     """Copy the metadata fields off a POST onto the row. Returns True if anything changed."""
@@ -341,15 +236,8 @@ def save_font_metadata(user_data, post):
             user_data.font_name = name
     return any(getattr(user_data, f) != before[f] for f in METADATA_FIELDS)
 
-
 def restamp_font_files(user_data):
-    """Write the row's metadata into every weight on disk.
-
-    Shared by the Font Details page and the inline editor on My Page, so the two cannot
-    drift apart. Until generation finishes ttf_file still points at the bundled MaruBuri,
-    which every such row shares — stamping that would rename one file, and with it every
-    other user's placeholder, to whatever this person typed.
-    """
+    """Write the row's metadata into every weight on disk."""
     if not user_data.font_name or not user_data.ttf_file:
         return
     if user_data.ttf_file.name == DEFAULT_TTF:
@@ -374,7 +262,6 @@ def restamp_font_files(user_data):
         except Exception as e:
             print(f"[WARN] failed to update {weight} font metadata: {e}")
 
-
 def font_status(request, font_id):
     """Progress for the polling UI. Cheap on purpose — it is hit every few seconds."""
     f = get_object_or_404(UserData, id=font_id)
@@ -386,15 +273,18 @@ def font_status(request, font_id):
         'ttf_url': f.ttf_file.url if f.is_ready else '',
     })
 
+@login_required
+@require_POST
+def toggle_like(request, font_id):
+    """Like or unlike, and report where that leaves things."""
+    font = get_object_or_404(UserData, id=font_id)
+    like, created = Like.objects.get_or_create(font=font, user=request.user)
+    if not created:
+        like.delete()
+    return JsonResponse({'liked': created, 'count': font.likes.count()})
 
 def download_font(request, font_id):
-    """Serve the whole family as one zip.
-
-    The three weights are one family — same typographic family name, different
-    usWeightClass — so they are installed together or not at all. Handing them over
-    one button at a time invited people to take Regular and wonder why their editor
-    only offered one weight.
-    """
+    """Serve the whole family as one zip."""
     user_data = get_object_or_404(UserData, id=font_id)
     weights = [(user_data.ttf_file, 'Regular'),
                (user_data.ttf_file_light, 'Light'),
@@ -405,7 +295,6 @@ def download_font(request, font_id):
     packed = 0
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
         for field, weight in weights:
-            # Light/Bold are best-effort in the pipeline, so a family may be Regular-only.
             if not field:
                 continue
             try:
@@ -423,7 +312,6 @@ def download_font(request, font_id):
     buf.seek(0)
     return FileResponse(buf, as_attachment=True, filename=f'{family}.zip',
                         content_type='application/zip')
-
 
 def _family_readme(user_data, family, weight_count):
     """Install notes + whatever metadata the owner filled in, shipped inside the zip."""
@@ -467,12 +355,7 @@ TTF_OUTPUT_DIR = os.path.join(settings.MEDIA_ROOT, 'ttf_files')
 os.makedirs(TTF_OUTPUT_DIR, exist_ok=True)
 
 def _set_status(font_id, stage=None, percent=None, status=None, error=None):
-    """Record pipeline progress for the polling endpoint.
-
-    Uses .update() rather than save(): this runs on a background thread while the same
-    row's ttf_file fields are being written a few lines later, and a full save() from a
-    stale instance would roll those back.
-    """
+    """Record pipeline progress for the polling endpoint."""
     fields = {}
     if stage is not None:
         fields['status_stage'] = stage
@@ -485,13 +368,6 @@ def _set_status(font_id, stage=None, percent=None, status=None, error=None):
     if fields:
         UserData.objects.filter(id=font_id).update(**fields)
 
-
-# Each percentage is the share of total time already elapsed when that stage *begins*,
-# timed on a real 2,350-glyph GPU run (M1 Pro, ~126s): generate starts at 1s, prepare at
-# 23s, Regular at 77s, Light at 93s, Bold at 109s. Setting a stage's percentage to its own
-# share instead would run the bar ~40 points ahead — it would jump to 62% a fifth of the
-# way in and then crawl. A full-charset (11,172) run stretches the generate stage, so the
-# bar lags there rather than leading, which is the safer way to be wrong.
 STAGES = {
     'start':    ('Reading your template', 0),
     'generate': ('Generating glyphs', 2),
@@ -501,10 +377,48 @@ STAGES = {
     'bold':     ('Building Bold', 86),
 }
 
+def _dir_size(path):
+    total = 0
+    for dirpath, _, files in os.walk(path):
+        for name in files:
+            try:
+                total += os.path.getsize(os.path.join(dirpath, name))
+            except OSError:
+                pass
+    return total
 
-def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSET, device_name='auto'):
-    # Everything is keyed on the font's id (UserData.id), so a user's fonts never
-    # collide on disk or overwrite each other's TTFs.
+def _prune_build_files(font_id, user_font_dir, trace_source_name):
+    """Delete the working files once the font itself is safely on disk."""
+    style_id = f'user_{font_id}'
+    workdir = os.path.join(settings.BASE_DIR, 'workdir')
+    keep = {trace_source_name, FIT_FILE}
+
+    doomed = [
+        os.path.join(workdir, 'crops', style_id),
+        os.path.join(workdir, 'glyphs', style_id),
+        os.path.join(workdir, 'configs', f'{style_id}.yaml'),
+    ]
+    if os.path.isdir(user_font_dir):
+        doomed += [os.path.join(user_font_dir, name)
+                   for name in os.listdir(user_font_dir) if name not in keep]
+
+    freed = 0
+    for path in doomed:
+        try:
+            if os.path.isdir(path):
+                freed += _dir_size(path)
+                shutil.rmtree(path)
+            elif os.path.isfile(path):
+                freed += os.path.getsize(path)
+                os.remove(path)
+        except OSError as e:
+            print(f"[WARN] font_id={font_id} could not remove {path}: {e}")
+
+    print(f"[DONE] font_id={font_id} pruned {freed / 1e6:.0f} MB of build files "
+          f"(kept {trace_source_name}/ and {FIT_FILE})")
+    return freed
+
+def _background_pipeline(template_pdf_path, font_id, charset_path=FULL_CHARSET, device_name='auto'):
     style_id = f"user_{font_id}"
     user_font_dir = os.path.join(settings.BASE_DIR, 'workdir', 'fonts', str(font_id))
 
@@ -533,9 +447,6 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
                 )
         print(f"[DEBUG] Copied inferred images to {flipped_result_dir}")
 
-        # The model draws at 128x128. Tracing that directly is what makes exported
-        # outlines look faceted, so the glyphs are rendered onto a finer grid first; the
-        # raw model output is kept untouched as the source of record.
         trace_input_dir_name = 'trace_regular'
         trace_regular_dir = os.path.join(user_font_dir, trace_input_dir_name)
         try:
@@ -554,13 +465,7 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
             final_path = os.path.join(TTF_OUTPUT_DIR, final_name)
             _vectorize(os.path.join(user_font_dir, input_dir_name), final_path,
                        font_basename, font_id)
-            # Fit the outlines: Hangul gets sized and spaced, Latin/symbols get a baseline
-            # and proportional advances. Best-effort — the font is already valid at this
-            # point, so a refine failure must never lose it.
             try:
-                # Measured once, on Regular, and reused by Light/Bold: a weight that fits
-                # itself reads its own thinner strokes as a smaller script and grows to
-                # compensate, which would leave the family's weights at different sizes.
                 if not shared_fit:
                     shared_fit.update(measure_fit(final_path))
                     _save_fit(user_font_dir, shared_fit)
@@ -571,21 +476,15 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
                            weight=weight_label)
             return final_name
 
-        # 2) Regular TTF — the primary result. It is built from the prepared trace
-        #    input, while the raw generated PNGs remain available for comparison.
         _set_status(font_id, *STAGES['regular'])
         reg_name = build_weight(trace_input_dir_name, f'user_font_{font_id}', 'Regular')
         user_data = UserData.objects.get(id=font_id)
         user_data.ttf_file.name = os.path.join('ttf_files', reg_name)
         user_data.ttf_file_light = None
         user_data.ttf_file_bold = None
-        # update_fields matters here: this instance was loaded before the later stages ran,
-        # so a full save() would write its stale status back over _set_status's progress.
         user_data.save(update_fields=['ttf_file', 'ttf_file_light', 'ttf_file_bold'])
         print(f"[DONE] font_id={font_id} Regular TTF generated -> {reg_name}")
 
-        # 3) Synthetic Light weight — best effort. This uses the same source as Regular,
-        #    then thins strokes before vector tracing and saves as a real 300-weight TTF.
         try:
             _set_status(font_id, *STAGES['light'])
             light_dir = os.path.join(user_font_dir, 'trace_light')
@@ -598,8 +497,6 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
         except Exception as e:
             print(f"[WARN] font_id={font_id} Light weight generation skipped: {e}")
 
-        # 4) Synthetic Bold weight — best effort. A failure here must not lose the Regular
-        #    font, so it's isolated and only saved on success.
         try:
             _set_status(font_id, *STAGES['bold'])
             bold_dir = os.path.join(user_font_dir, 'trace_bold')
@@ -612,9 +509,12 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
         except Exception as e:
             print(f"[WARN] font_id={font_id} Bold weight generation skipped: {e}")
 
-        # Regular exists by this point (the weights above are optional), so the font is
-        # usable even if one of them was skipped.
         _set_status(font_id, 'Done', 100, status=UserData.STATUS_DONE)
+
+        try:
+            _prune_build_files(font_id, user_font_dir, trace_input_dir_name)
+        except Exception as e:
+            print(f"[WARN] font_id={font_id} could not prune build files: {e}")
 
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] font_id={font_id} generateTTF.js failed: {e.stderr}")
@@ -624,7 +524,6 @@ def _background_pipeline(template_pdf_path, font_id, charset_path=DEFAULT_CHARSE
     except Exception as e:
         print(f"[ERROR] font_id={font_id} pipeline failed: {e}")
         _set_status(font_id, status=UserData.STATUS_FAILED, error=str(e)[:500])
-        
 
 @login_required
 def learning(request):
@@ -640,21 +539,13 @@ def learning(request):
         saved_name = fs.save(request.FILES['template'].name, request.FILES['template'])
         full_template_path = os.path.join(TEMP_UPLOAD_DIR, saved_name)
 
-        # Fast (~2,350 common Hangul) vs Full (11,172) generation.
-        charset_path = FULL_CHARSET if request.POST.get('speed') == 'full' else DEFAULT_CHARSET
-        # 'auto' uses the GPU when there is one; fp32 there is glyph-for-glyph identical
-        # to CPU and 4x faster (see inference.get_device). 'cpu' stays available.
+        charset_path = FULL_CHARSET
         device_name = 'cpu' if request.POST.get('accelerator') == 'cpu' else 'auto'
 
-        # Each upload starts a brand-new font for this user; the pipeline fills in the
-        # TTF on this exact row, so a user's fonts never overwrite one another.
-        # 'pending' until the thread picks it up — the page must not show the bundled
-        # placeholder font as if it were this user's handwriting.
         font_name = request.POST.get('font_name', '').strip() or DEFAULT_FONT_NAME
         font = UserData.objects.create(user=request.user, font_name=font_name,
                                        status=UserData.STATUS_PENDING,
                                        status_stage='Queued', status_percent=0)
-        # A user's first font becomes their Home font automatically; later ones don't.
         if not request.user.fonts.filter(show_on_home=True).exists():
             font.show_on_home = True
             font.save(update_fields=['show_on_home'])
@@ -665,10 +556,6 @@ def learning(request):
             daemon=True
         ).start()
 
-        # Straight to the font's own window, where _progress.html polls the build. This used
-        # to render result.html, a page nothing else linked to.
         return redirect('user_page', font_id=font.id)
 
-    # GET (or a POST with no file): show the upload page. This used to name a
-    # 'pybo/create.html' that has never existed in the repo, so any GET here 500'd.
     return render(request, "pybo/create_font.html")

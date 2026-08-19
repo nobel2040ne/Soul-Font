@@ -12,7 +12,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('me/', views.my_page, name='my_page'),
     path('user/<int:font_id>/', views.user_page, name='user_page'),
-    path('user/<int:font_id>/editor/', views.font_editor, name='font_editor'),
     path('admin/', views.admin_page, name='admin_page'),
     path('create/', views.create_font, name='create_font'),
     path('letter/', views.letter, name='letter'),
@@ -21,6 +20,7 @@ urlpatterns = [
     path('download-template/', views.download_template, name='download_template'),
     path('user/<int:font_id>/download/', views.download_font, name='download_font'),
     path('user/<int:font_id>/status/', views.font_status, name='font_status'),
+    path('user/<int:font_id>/like/', views.toggle_like, name='toggle_like'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

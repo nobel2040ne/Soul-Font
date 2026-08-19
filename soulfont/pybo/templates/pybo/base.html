@@ -14,40 +14,17 @@ Blocks:
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}SoulFont{% endblock %} | SoulFont</title>
-  {% comment %}
-  Vendored rather than loaded from unpkg: .close and .separator have no local styles,
-  so the whole window chrome used to depend on a third party being reachable.
-  {% endcomment %}
-  {% comment %}
-  vstatic appends the file's mtime, so an edited stylesheet is fetched instead of being
-  served from the browser's heuristic cache. The dev server sends no ETag or
-  Cache-Control, so without this a CSS change looks like nothing happened until a
-  hard reload.
-  {% endcomment %}
   <link rel="stylesheet" href="{% vstatic 'vendor/system/system.css' %}">
   <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}">
   <link rel="stylesheet" href="{% vstatic 'css/retro.css' %}">
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}desktop{% endblock %}">
-  {% comment %}
-  System 7 menu bar: titles pull down, command keys sit right-aligned, separators are dotted
-  rules, and items you cannot use are greyed rather than removed. That last rule is why
-  "Download Family" stays visible when you have no font yet — the era told you a thing exists
-  before it told you that you cannot do it.
-  {% endcomment %}
-  {% comment %}
-  System 7's menu bar belongs to whichever application is frontmost: the Apple menu on the
-  left, that application's own menus next, and the Application menu on the far right for
-  switching between what is running. Each page here is an application, so it names itself
-  in `app_name` and hangs its menus in `app_menus`; everything else is the shell.
-  {% endcomment %}
   <div class="menu-bar">
     <a class="wordmark" href="{% url 'desktop' %}">SOULFONT</a>
 
-    {% comment %} the frontmost application's own menus {% endcomment %}
     <span class="app-menus" data-app-menus>
     {% block app_menus %}
     <span class="mb-menu" data-menu>
@@ -96,13 +73,6 @@ Blocks:
       <a href="{% url 'login' %}">Log&nbsp;In</a>
     {% endif %}
 
-    {% comment %}
-    The Application menu. In System 7 this sat at the far right, showed the frontmost
-    application's name, and listed everything running so you could switch. Here the list is
-    the applications this site has, and the tick marks the one you are in. The tick reads
-    the resolved URL name, so a page becomes an application by being routed rather than by
-    every view having to remember to say which one it is.
-    {% endcomment %}
     {% with here=request.resolver_match.url_name %}
     <span class="mb-menu app-menu" data-menu>
       <span class="mb-item" role="button" tabindex="0" aria-haspopup="true"
@@ -119,7 +89,7 @@ Blocks:
             {% if here == 'create_font' or here == 'learning' %}aria-checked="true"{% endif %}>New Font</li>
         {% if request.user.is_authenticated %}
           <li role="menuitemradio" data-go="{% url 'my_page' %}"
-              {% if here == 'my_page' or here == 'user_page' or here == 'font_editor' %}aria-checked="true"{% endif %}>My Fonts</li>
+              {% if here == 'my_page' or here == 'user_page' %}aria-checked="true"{% endif %}>My Fonts</li>
         {% endif %}
         <li class="sep" role="separator"></li>
         <li role="menuitemradio" data-go="{% url 'about' %}"

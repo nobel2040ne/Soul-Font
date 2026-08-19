@@ -1,4 +1,13 @@
-/* SoulFont retro UI: direct nav + Coverflow / Grid switch. */
+/* A touch screen cannot hover, and cannot land on 20 pixels. The few behaviours built on
+   those stand down when this matches, and the markup underneath does the work instead. */
+(function () {
+  var q = window.matchMedia('(max-width: 720px), (pointer: coarse) and (max-width: 1024px)');
+  window.SoulShell = {
+    q: q,
+    mobile: function () { return q.matches; }
+  };
+})();
+
 (function () {
   window.navigateWithFade = function (url) {
     window.location.href = url;
@@ -49,7 +58,6 @@ document.addEventListener('DOMContentLoaded', function () {
   updateFontPreviewScale(document);
 });
 
-/* Coverflow + Grid controller, initialised by the index page. */
 function initSoulGallery() {
   var stage = document.getElementById('gallery');
   if (!stage) return;
@@ -61,18 +69,39 @@ function initSoulGallery() {
   var arrows = document.getElementById('cover-arrows');
   var index = 0;
   var requestedMode = new URLSearchParams(window.location.search).get('view');
-  var mode = requestedMode || localStorage.getItem('soul-view') || 'coverflow';
+  var VIEW_KEY = (window.SoulShell && SoulShell.mobile()) ? 'soul-view-touch' : 'soul-view';
+  var shellDefault = (window.SoulShell && SoulShell.mobile()) ? 'directory' : 'coverflow';
+  var mode = requestedMode || localStorage.getItem(VIEW_KEY) || shellDefault;
   if (mode === 'grid') mode = 'directory';
   if (mode !== 'coverflow' && mode !== 'directory') mode = 'coverflow';
 
+  var flat = false;
+
   function renderCoverflow() {
-    var OFFSET = 56, GAP = 390;
+    if (flat) {
+      var step = (cards[0].offsetWidth || 300) + 18;
+      cards.forEach(function (card, i) {
+        var d = i - index;
+        card.style.transform = 'translate(-50%,-50%) translateX(' + (d * step) + 'px)';
+        card.style.opacity = Math.abs(d) > 1 ? 0 : 1;
+        card.style.zIndex = String(100 - Math.abs(d));
+        card.style.pointerEvents = d === 0 ? 'auto' : 'none';
+      });
+      stage.dispatchEvent(new CustomEvent('soul:flow', {
+        bubbles: true, detail: { index: index, count: cards.length }
+      }));
+      return;
+    }
+    var OFFSET = 56;
+    var cardW = cards[0].offsetWidth || 400;
+    var k = cardW / 400;
+    var step = cardW * 0.41;
     cards.forEach(function (card, i) {
       var d = i - index;
       var abs = Math.abs(d);
-      var tx = d * GAP * 0.42;
+      var tx = d * step;
       var rot = d === 0 ? 0 : (d < 0 ? OFFSET : -OFFSET);
-      var tz = d === 0 ? 150 : -abs * 100;
+      var tz = (d === 0 ? 150 : -abs * 100) * k;
       var scale = d === 0 ? 1.08 : 0.82;
       card.style.transform =
         'translate(-50%,-50%) translateX(' + tx + 'px) translateZ(' + tz + 'px) rotateY(' + rot + 'deg) scale(' + scale + ')';
@@ -80,6 +109,10 @@ function initSoulGallery() {
       card.style.zIndex = String(100 - abs);
       card.style.pointerEvents = abs > 3 ? 'none' : 'auto';
     });
+    stage.dispatchEvent(new CustomEvent('soul:flow', {
+      bubbles: true,
+      detail: { index: index, count: cards.length }
+    }));
   }
 
   function applyMode() {
@@ -100,13 +133,17 @@ function initSoulGallery() {
       cards.forEach(function (c) { coverflow.appendChild(c); });
       renderCoverflow();
     }
-    // the View menu carries the tick, the way the Finder marked the current view
     document.querySelectorAll('#viewMenu [data-view]').forEach(function (li) {
       li.setAttribute('aria-checked', String(li.getAttribute('data-view') === mode));
     });
+    stage.dispatchEvent(new CustomEvent('soul:view', { bubbles: true, detail: { mode: mode } }));
   }
 
-  function setMode(m) { mode = m; localStorage.setItem('soul-view', m); applyMode(); }
+  function setMode(m) {
+    mode = m;
+    try { localStorage.setItem(VIEW_KEY, m); } catch (e) {  }
+    applyMode();
+  }
   function next() { if (index < cards.length - 1) { index++; renderCoverflow(); } }
   function prev() { if (index > 0) { index--; renderCoverflow(); } }
 
@@ -125,7 +162,6 @@ function initSoulGallery() {
     if (mode !== 'coverflow') return;
     if (e.keyCode === 37) prev(); else if (e.keyCode === 39) next();
   });
-  // click a non-centered card to bring it to front
   cards.forEach(function (card, i) {
     card.addEventListener('click', function (e) {
       if (mode === 'coverflow' && i !== index && !e.target.closest('a,button')) { index = i; renderCoverflow(); }
@@ -133,12 +169,71 @@ function initSoulGallery() {
   });
 
   applyMode();
+
+  window.SoulGallery = {
+    next: next,
+    prev: prev,
+    setMode: setMode,
+    mode: function () { return mode; },
+    render: renderCoverflow,
+    setFlat: function (on) { flat = !!on; if (mode === 'coverflow') renderCoverflow(); }
+  };
 }
 document.addEventListener('DOMContentLoaded', initSoulGallery);
 
-/* ---------- menu bar ----------
-   One open menu at a time, click or keyboard, Escape closes. Command keys are wired for
-   real: the menu says (Cmd)N so (Cmd)N has to work, otherwise it is decoration. */
+function initLikeButtons(root) {
+  (root || document).querySelectorAll('[data-like-url]').forEach(function (el) {
+    if (el.dataset.likeReady) return;
+    el.dataset.likeReady = '1';
+
+    function paint(liked, count) {
+      el.dataset.liked = liked ? '1' : '0';
+      el.setAttribute('aria-pressed', String(liked));
+      el.classList.toggle('is-liked', liked);
+      var glyph = el.querySelector('.like-glyph');
+      if (glyph) glyph.textContent = liked ? '♥' : '♡';
+      var out = el.querySelector('.like-count');
+      if (out) out.textContent = count ? String(count) : '';
+      el.setAttribute('aria-label', (liked ? 'Unlike' : 'Like') + ', ' + count + ' so far');
+    }
+
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+
+      if (el.dataset.loginUrl) { window.location.href = el.dataset.loginUrl; return; }
+
+      var wasLiked = el.dataset.liked === '1';
+      var wasCount = parseInt((el.querySelector('.like-count') || {}).textContent, 10) || 0;
+      var count = wasCount + (wasLiked ? -1 : 1);
+      paint(!wasLiked, count < 0 ? 0 : count);
+
+      fetch(el.dataset.likeUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': soulCsrfToken(), 'Accept': 'application/json' }
+      })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (d) { paint(!!d.liked, typeof d.count === 'number' ? d.count : count); })
+        .catch(function () {
+          paint(wasLiked, wasCount);
+          if (window.sfAlert) sfAlert('That did not save. Check your connection.', { icon: 'caution' });
+        });
+    });
+  });
+}
+window.initLikeButtons = initLikeButtons;
+
+function soulCsrfToken() {
+  var el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+  if (el) return el.value;
+  var m = /(?:^|;\s*)csrftoken=([^;]+)/.exec(document.cookie);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+window.soulCsrfToken = soulCsrfToken;
+
+document.addEventListener('DOMContentLoaded', function () { initLikeButtons(document); });
+
 (function () {
   function allMenus() {
     return Array.prototype.slice.call(document.querySelectorAll('[data-menu]'));
@@ -153,8 +248,6 @@ document.addEventListener('DOMContentLoaded', initSoulGallery);
     });
   }
 
-  // Called again whenever the frontmost window changes, because the bar then holds a
-  // different application's menus. The guard makes a re-run cost nothing.
   function bindMenus() {
     allMenus().forEach(function (menu) {
     if (menu.dataset.menuReady) return;
@@ -176,15 +269,14 @@ document.addEventListener('DOMContentLoaded', initSoulGallery);
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!menu.hasAttribute('open')); }
       if (e.key === 'Escape') setOpen(false);
     });
-    // hovering across the bar with one menu open switches to the next, as the era did
     trigger.addEventListener('mouseenter', function () {
-      if (menus.some(function (m) { return m.hasAttribute('open'); })) setOpen(true);
+      if (window.SoulShell && SoulShell.mobile()) return;
+      if (allMenus().some(function (m) { return m.hasAttribute('open'); })) setOpen(true);
     });
 
     menu.querySelectorAll('li[data-go]').forEach(function (li) {
       li.addEventListener('click', function (e) {
         e.stopPropagation();
-        // On the desktop a menu item opens a window; everywhere else it is a plain link.
         if (window.SoulSystem && window.SoulSystem.handleGo(li.dataset.go)) return;
         window.location.href = li.dataset.go;
       });
@@ -197,7 +289,6 @@ document.addEventListener('DOMContentLoaded', initSoulGallery);
   document.addEventListener('click', function () { closeAll(null); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(null); });
 
-  // the command keys the menus advertise
   function shortcuts() {
     var map = {};
     document.querySelectorAll('[data-menu] li[data-go]').forEach(function (li) {
@@ -211,7 +302,6 @@ document.addEventListener('DOMContentLoaded', initSoulGallery);
   document.addEventListener('keydown', function (e) {
     if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.altKey) return;
     var target = shortcuts()[e.key.toLowerCase()];
-    // never steal a shortcut while the user is typing
     var t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
     if (!target) return;
@@ -221,15 +311,12 @@ document.addEventListener('DOMContentLoaded', initSoulGallery);
   });
 })();
 
-/* ---------- desktop pattern ----------
-   Remembered per browser. The <body> already carries the default in CSS, so a visitor with
-   JavaScript off still gets 50% Gray rather than a bare background. */
 (function () {
   var KEY = 'soulfont.desktopPattern';
   var DEFAULT = 'gray';
 
   function apply(name) {
-    document.body.setAttribute('data-pattern', name);
+    document.documentElement.setAttribute('data-pattern', name);
     document.querySelectorAll('#patternMenu li[data-pattern]').forEach(function (li) {
       li.setAttribute('aria-checked', String(li.dataset.pattern === name));
     });
@@ -243,7 +330,7 @@ document.addEventListener('DOMContentLoaded', initSoulGallery);
       li.addEventListener('click', function (e) {
         e.stopPropagation();
         apply(li.dataset.pattern);
-        try { localStorage.setItem(KEY, li.dataset.pattern); } catch (err) { /* private mode */ }
+        try { localStorage.setItem(KEY, li.dataset.pattern); } catch (err) {  }
         var m = document.getElementById('patternMenu');
         if (m) m.removeAttribute('open');
       });
@@ -253,20 +340,11 @@ document.addEventListener('DOMContentLoaded', initSoulGallery);
   else init();
 })();
 
-/* ---------- submit feedback ----------
-   Uploading a template starts a two-minute job and saving metadata rewrites three font
-   files, but the button gave no sign either had begun, so the natural response was to
-   click again. Marks the button busy for the life of the navigation and blocks the
-   second click. Opt out with data-no-busy on the form. */
 function initBusyForms(root) {
   (root || document).querySelectorAll('form:not([data-no-busy])').forEach(function (form) {
     if (form.dataset.busyReady) return;
     form.dataset.busyReady = '1';
     form.addEventListener('submit', function (e) {
-      // Deferred by one tick so every other submit handler has had its say. The create
-      // page cancels its own submit when no PDF is chosen, and this listener is
-      // registered first — marking the button busy immediately would strand it on
-      // "Uploading…" for a form that never navigates.
       setTimeout(function () {
         if (e.defaultPrevented) return;
         var btn = form.querySelector('button[type="submit"], button:not([type])');
@@ -275,7 +353,6 @@ function initBusyForms(root) {
         btn.textContent = btn.dataset.busyLabel || 'Working…';
         btn.classList.add('is-busy');
         btn.setAttribute('aria-busy', 'true');
-        // a disabled button is not submitted with the form, so block the click instead
         btn.addEventListener('click', function (ev) { ev.preventDefault(); });
       }, 0);
     });
@@ -284,11 +361,6 @@ function initBusyForms(root) {
 window.initBusyForms = initBusyForms;
 document.addEventListener('DOMContentLoaded', function () { initBusyForms(document); });
 
-/* ---------- pop-up menus ----------
-   A native <select> opens the host system's own menu — on a Mac a dark, rounded, blue-
-   highlighted panel in the system font, which breaks the illusion the instant you click it.
-   The control is drawn here instead. The real <select> stays in the DOM, hidden but not
-   removed, so forms still submit it and existing script still reads .value and hears 'change'. */
 function initPopupMenus(root) {
   (root || document).querySelectorAll('select:not([data-no-popup])').forEach(function (sel) {
     if (sel.dataset.popupReady) return;
@@ -297,7 +369,6 @@ function initPopupMenus(root) {
 
     var wrap = document.createElement('span');
     wrap.className = 'popup';
-    // the sizing class was written for the control, so it moves to what is now the control
     Array.prototype.slice.call(sel.classList).forEach(function (c) { wrap.classList.add(c); });
     sel.parentNode.insertBefore(wrap, sel);
     wrap.appendChild(sel);
@@ -362,7 +433,6 @@ function initPopupMenus(root) {
       else if (e.key === 'Escape') { setOpen(false); }
       else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!wrap.hasAttribute('open')); }
     });
-    // anything that changes the value from elsewhere still has to move the control
     sel.addEventListener('change', sync);
     sync();
   });
@@ -380,11 +450,6 @@ document.addEventListener('click', function () { closePopups(null); });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePopups(null); });
 document.addEventListener('DOMContentLoaded', function () { initPopupMenus(document); });
 
-/* ---------- moving and closing windows ----------
-   Being able to push a window around is most of what makes a desktop feel like one. The title
-   bar is the handle, as it always was, and the close box puts the window away and returns you
-   to the Finder. Dragging is skipped on narrow screens, where the window fills the display and
-   there is nowhere to move it to. */
 (function () {
   function initWindows() {
     if (window.matchMedia('(max-width: 720px)').matches) return;
@@ -395,7 +460,6 @@ document.addEventListener('DOMContentLoaded', function () { initPopupMenus(docum
       var dx = 0, dy = 0;
 
       bar.addEventListener('pointerdown', function (e) {
-        // the close and zoom boxes are controls, not part of the handle
         if (e.target.closest('.close, .zoom, a, button')) return;
         e.preventDefault();
         var startX = e.clientX - dx, startY = e.clientY - dy;
@@ -418,8 +482,6 @@ document.addEventListener('DOMContentLoaded', function () { initPopupMenus(docum
       });
     });
 
-    // The close box was decorative on every page. It closes the window now, which on a system
-    // with one window open means going back to the Finder.
     document.querySelectorAll('[data-close]').forEach(function (box) {
       box.addEventListener('click', function (e) {
         e.preventDefault();
@@ -432,13 +494,6 @@ document.addEventListener('DOMContentLoaded', function () { initPopupMenus(docum
   else initWindows();
 })();
 
-/* ---------- alerts ----------
-   window.alert() hands the dialog to the host system, which draws it in its own font with its
-   own buttons — the same illusion break the native <select> caused. sfAlert draws the era's
-   alert instead, out of the frame vocabulary system.css already ships.
-
-   Returns a promise so a future sfConfirm can share the frame. Every current caller is
-   fire-and-forget, so nothing has to await it. */
 window.sfAlert = function (message, opts) {
   opts = opts || {};
   return new Promise(function (resolve) {
@@ -464,7 +519,6 @@ window.sfAlert = function (message, opts) {
     icon.setAttribute('aria-hidden', 'true');
     var text = document.createElement('p');
     text.className = 'sf-alert-text';
-    // textContent, not innerHTML: the message can carry a filename the user chose
     text.textContent = message;
     box.setAttribute('aria-label', message);
     contents.appendChild(icon);
@@ -488,19 +542,15 @@ window.sfAlert = function (message, opts) {
     function close() {
       document.removeEventListener('keydown', onKey, true);
       back.remove();
-      // put the caret back where the user left it
-      if (opener && opener.focus) { try { opener.focus(); } catch (e) { /* gone */ } }
+      if (opener && opener.focus) { try { opener.focus(); } catch (e) {  } }
       resolve();
     }
     function onKey(e) {
-      // Return activates the default button and Escape dismisses — on a one-button alert
-      // System 7 treated both the same. Tab has nowhere to go, so it stays put.
       if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
       else if (e.key === 'Tab') { e.preventDefault(); ok.focus(); }
     }
 
     ok.addEventListener('click', close);
-    // a modal alert takes the keyboard from everything, including the menu bar
     document.addEventListener('keydown', onKey, true);
     ok.focus();
   });
