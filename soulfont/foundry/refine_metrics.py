@@ -79,14 +79,22 @@ LINE_GAP = 120
 # the glyphs now carry their true relative sizes, hanging them by the top of the bowl
 # derives each tail's real depth instead of dropping every one by the same guess.
 DESCENDERS = set(ord(c) for c in "gjpqy")
-# Marks that rest on the baseline and dip a little below it.
-LOW_MARKS = set(ord(c) for c in ",;")
+# Marks that rest on the baseline and dip a little below it. The underscore is drawn
+# entirely below it, and this is as close as one rule gets.
+LOW_MARKS = set(ord(c) for c in ",;_")
 LOW_MARK_DROP = 0.09
 # Letters whose height defines the x-line.
 X_HEIGHT_LETTERS = set(ord(c) for c in "acemnorsuvwxz")
-# Tall symmetric brackets read best centered on the text, not sitting on the baseline.
-CENTERED = set(ord(c) for c in "()")
-TOP_ALIGNED = set(ord(c) for c in "'\"`´‘’“”")
+# Marks that straddle the text rather than stand on it: brackets, and every mark whose
+# whole meaning is that it sits between two things.
+#
+# Everything not named in one of these sets is dropped onto the baseline, which is right
+# for a letter and wrong for most symbols — a hyphen resting on the baseline is an
+# underscore, and "1+1=2" written that way sags in the middle. The template now asks for
+# the whole of ASCII, so the sets have to cover it rather than the eight marks that
+# happened to be on the old sheet.
+CENTERED = set(ord(c) for c in "()[]{}<>+-=~※")
+TOP_ALIGNED = set(ord(c) for c in "'\"`´‘’“”^°*")
 
 SPACE_CODEPOINTS = (0x20, 0xA0)
 # Full-width space, used between Korean words in some layouts.
@@ -109,9 +117,31 @@ ELLIPSIS = 0x2026        # … three periods on the baseline
 MIDDLE_DOT = 0x00B7      # · a period raised to the middle of the x-height
 
 
+# Hangul and CJK, by block.
+#
+# The test used to be "codepoint >= U+1100", and while the template's punctuation stopped
+# at ASCII that was true of every glyph in the font. It stopped being true the moment the
+# sheet started asking for won and the reference mark: U+20A9 and U+203B are punctuation
+# that happens to live high, and both were being scaled and spaced as Hangul. Hangul is
+# left standing where it was drawn — the script has no baseline to sit on — so a currency
+# sign sent down that path floats wherever it happened to fall in its cell instead of
+# resting on the line beside the digits it belongs to.
+_CJK_RANGES = (
+    (0x1100, 0x11FF),   # Hangul jamo
+    (0x3000, 0x303F),   # CJK symbols and punctuation
+    (0x3130, 0x318F),   # Hangul compatibility jamo
+    (0x3400, 0x4DBF),   # CJK unified ideographs extension A
+    (0x4E00, 0x9FFF),   # CJK unified ideographs
+    (0xA960, 0xA97F),   # Hangul jamo extended-A
+    (0xAC00, 0xD7A3),   # Hangul syllables
+    (0xD7B0, 0xD7FF),   # Hangul jamo extended-B
+    (0xF900, 0xFAFF),   # CJK compatibility ideographs
+    (0xFF00, 0xFFEF),   # halfwidth and fullwidth forms
+)
+
+
 def _is_cjk(cp):
-    # Hangul jamo/syllables and CJK live at U+1100 and up; ASCII/Latin/punct below.
-    return cp is not None and cp >= 0x1100
+    return cp is not None and any(lo <= cp <= hi for lo, hi in _CJK_RANGES)
 
 
 def _scale_upem(font, new_upem):
@@ -501,10 +531,11 @@ def refine_metrics(ttf_path, out_path=None, fit=None):
         # horizontal: move ink to start at the side bearing; advance = ink + both bearings
         dx = lat_sb - glyph.xMin
         if cp in TOP_ALIGNED:
-            # Quotes/apostrophes hang near the cap-height top, not on the baseline.
+            # Quotes, the degree sign and the caret hang near the cap-height top.
             dy = cap_top - glyph.yMax
         elif cp in CENTERED:
-            # Brackets: center the ink on the text midline so they straddle the baseline.
+            # Brackets and the operators: center the ink on the text midline so they
+            # straddle the baseline instead of standing on it.
             dy = mid_line - (glyph.yMin + glyph.yMax) // 2
         elif cp in DESCENDERS:
             # Hang the bowl from the x-line so the tail's depth comes from the letter's

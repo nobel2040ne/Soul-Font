@@ -631,7 +631,8 @@ class FontStyleProcessor:
             raise ValueError(
                 "Template crop count mismatch: "
                 f"expected {expected} cells, got {count}. "
-                "Use the current downloaded template or the original 28-cell Korean template."
+                "This usually means an older template was filled in — the sheet is now a "
+                "single 10x13 page. Download the template again and use that one."
             )
 
         style_paths = cleaned_paths[:KOR_STYLE_CELL_COUNT]
@@ -642,7 +643,9 @@ class FontStyleProcessor:
         if blank_cells:
             raise ValueError(
                 "Korean style reference cells are blank or unreadable: "
-                f"{blank_cells}. Fill all first-page Korean cells and upload again."
+                f"{blank_cells}. These are the first {KOR_STYLE_CELL_COUNT} cells, reading "
+                "left to right from the top; every one has to be filled in. Write them and "
+                "upload again."
             )
 
         return cleaned_paths

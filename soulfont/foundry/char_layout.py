@@ -15,10 +15,31 @@ and the pipeline behaves exactly as before (backward compatible).
 """
 import math
 
-TEMPLATE_LAYOUT_VERSION = "kor-28-plus-extra-v3-ssyweo"
-TEMPLATE_ROWS = 4
-TEMPLATE_COLS = 7
+TEMPLATE_LAYOUT_VERSION = "kor-28-plus-ascii-v4-10x13"
+
+# The printed grid. 10x13 on A4 gives a cell of about 18.1 x 20.6 mm, against the 25.8 x
+# 40.8 mm of the 4x7 sheet it replaces — roughly a third of the area, and close to square
+# rather than a tall letterbox, which is the shape a Hangul syllable actually wants.
+#
+# The whole set now lands on a single page. That is the point of the smaller cell: 125
+# guides at 4x7 took four sheets to print, fill and scan, and every extra sheet is another
+# chance for one to be missed, fed in crooked, or scanned at a different exposure.
+TEMPLATE_ROWS = 13
+TEMPLATE_COLS = 10
 TEMPLATE_CELLS_PER_PAGE = TEMPLATE_ROWS * TEMPLATE_COLS
+
+# How much of each cell crop.py throws away, as a fraction of the cell.
+#
+# These live here rather than in crop.py because they are a contract between two files
+# that never import each other: the cropper trims this much, and the template generator
+# has to keep the printed guide glyph inside the trimmed band or the guide ends up traced
+# into the font as though the user had drawn it. With the band expressed here, the
+# generator can check its own artwork against the number the cropper will actually use
+# (see scripts/generate_template.py, which refuses to write a sheet that would leak).
+CELL_PAD_FRAC = 0.06     # trimmed off every cell edge — drops the printed grid line
+TOP_EXTRA_FRAC = 0.14    # trimmed off the cell top as well — drops the printed guide glyph
+# The band the guide has to fit inside, measured from the very top of the cell.
+GUIDE_BAND_FRAC = CELL_PAD_FRAC + TOP_EXTRA_FRAC
 
 # 28 Korean style-reference characters, in template-cell order.
 # The v3 template uses 쭲 at slot 14 so the medial ㅝ is present in style memory.
@@ -31,8 +52,23 @@ ENG_CHARS = (
     [chr(c) for c in range(ord('0'), ord('9') + 1)]
 )
 
-# Common special characters / punctuation.
-SPECIAL_CHARS = list(".,!?'\"()-:;@#%&*/+=")
+# Punctuation and symbols.
+#
+# The whole of printable ASCII, rather than a hand-picked twenty. Completing it is the
+# boundary worth drawing: what fell outside the old set was $ < > [ \ ] ^ _ ` { | } ~ —
+# the characters addresses, prices, file paths, code and emoticons are made of, so a font
+# that stopped short of them dropped a glyph in the middle of ordinary writing.
+ASCII_PUNCTUATION = list("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+
+# The marks everyday Korean writing needs that ASCII has no room for: the won sign, the
+# reference mark that heads a note in almost every Korean form or notice, and the degree
+# sign. Both candidate guide fonts carry all three.
+KOREAN_DAILY_MARKS = list("\u20a9\u203b\u00b0")
+
+# Deliberately absent, because refine_metrics derives each one from a mark the writer has
+# already drawn — asking for them again would cost cells and buy nothing:
+#   ‘ ’ from '     “ ” from "     – — ― − from -     … and · from .
+SPECIAL_CHARS = ASCII_PUNCTUATION + KOREAN_DAILY_MARKS
 
 # Everything produced by tracing the user's own handwriting (not the model), in order.
 EXTRA_CHARS = ENG_CHARS + SPECIAL_CHARS

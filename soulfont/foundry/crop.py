@@ -18,7 +18,12 @@ from PIL import Image, ImageChops, ImageOps
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
-from foundry.char_layout import TEMPLATE_COLS, TEMPLATE_ROWS  # noqa: E402
+from foundry.char_layout import (  # noqa: E402
+    CELL_PAD_FRAC,
+    TEMPLATE_COLS,
+    TEMPLATE_ROWS,
+    TOP_EXTRA_FRAC,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--src_dir", required=True)
@@ -32,8 +37,9 @@ args = parser.parse_args()
 
 ROWS, COLS = args.rows, args.cols
 START_UNICODE = 0xAC00  # filenames are positional (sort order), not literal codepoints
-CELL_PAD_FRAC = 0.06    # trim this fraction off each cell edge to drop grid lines
-TOP_EXTRA_FRAC = 0.05   # extra trim off each cell top (drops the printed guide glyph)
+# CELL_PAD_FRAC and TOP_EXTRA_FRAC come from char_layout: how much is trimmed here and how
+# far down the page the guide glyph is printed are two halves of one decision, and they
+# used to be written out separately in two files that never import each other.
 OUT_SIZE = 512
 
 os.makedirs(args.dst_dir, exist_ok=True)
